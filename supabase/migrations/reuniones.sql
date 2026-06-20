@@ -1,3 +1,5 @@
+-- ── 1) Tablas (crear las 3 primero; las policies referencian entre tablas) ──
+
 -- Perfiles de admins (se auto-puebla en el primer login de cada admin)
 create table if not exists admin_profiles (
   id uuid primary key references auth.users(id) on delete cascade,
@@ -5,14 +7,6 @@ create table if not exists admin_profiles (
   nombre text not null,
   created_at timestamptz default now()
 );
-alter table admin_profiles enable row level security;
--- Cualquier admin autenticado puede ver todos los perfiles (para el multiselect)
-drop policy if exists "admins_ven_perfiles" on admin_profiles;
-create policy "admins_ven_perfiles" on admin_profiles for select using (auth.uid() is not null);
-drop policy if exists "admins_upsert_perfil" on admin_profiles;
-create policy "admins_upsert_perfil" on admin_profiles for insert with check (id = auth.uid());
-drop policy if exists "admins_update_perfil" on admin_profiles;
-create policy "admins_update_perfil" on admin_profiles for update using (id = auth.uid());
 
 -- Reuniones
 create table if not exists reuniones (
@@ -24,8 +18,30 @@ create table if not exists reuniones (
   creado_por uuid references auth.users(id),
   created_at timestamptz default now()
 );
-alter table reuniones enable row level security;
--- Admin ve reuniones que creó o donde está invitado
+
+-- Participantes de reuniones
+create table if not exists reuniones_admins (
+  reunion_id uuid references reuniones(id) on delete cascade,
+  admin_id uuid references auth.users(id),
+  primary key (reunion_id, admin_id)
+);
+
+-- ── 2) Row Level Security ──
+alter table admin_profiles    enable row level security;
+alter table reuniones         enable row level security;
+alter table reuniones_admins  enable row level security;
+
+-- ── 3) Policies ──
+
+-- admin_profiles: cualquier admin autenticado puede ver todos los perfiles (para el multiselect)
+drop policy if exists "admins_ven_perfiles" on admin_profiles;
+create policy "admins_ven_perfiles" on admin_profiles for select using (auth.uid() is not null);
+drop policy if exists "admins_upsert_perfil" on admin_profiles;
+create policy "admins_upsert_perfil" on admin_profiles for insert with check (id = auth.uid());
+drop policy if exists "admins_update_perfil" on admin_profiles;
+create policy "admins_update_perfil" on admin_profiles for update using (id = auth.uid());
+
+-- reuniones: el admin ve las que creó o donde está invitado
 drop policy if exists "ver_propias" on reuniones;
 create policy "ver_propias" on reuniones for select using (
   creado_por = auth.uid() or
@@ -36,13 +52,7 @@ create policy "crear_reunion" on reuniones for insert with check (creado_por = a
 drop policy if exists "borrar_reunion" on reuniones;
 create policy "borrar_reunion" on reuniones for delete using (creado_por = auth.uid());
 
--- Participantes de reuniones
-create table if not exists reuniones_admins (
-  reunion_id uuid references reuniones(id) on delete cascade,
-  admin_id uuid references auth.users(id),
-  primary key (reunion_id, admin_id)
-);
-alter table reuniones_admins enable row level security;
+-- reuniones_admins: ves tus invitaciones o las de reuniones que creaste
 drop policy if exists "ver_participantes" on reuniones_admins;
 create policy "ver_participantes" on reuniones_admins for select using (
   admin_id = auth.uid() or
