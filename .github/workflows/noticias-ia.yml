@@ -1,9 +1,9 @@
 name: Noticias IA semanal
 
 on:
-  # schedule:  # DESACTIVADO en el monorepo (se activa al migrar producción aquí; ver docs/DEPLOY.md)
+  schedule:
     # Cada lunes a las 12:00 UTC (~8:00 am Chile / 7:00 am Perú)
-    #   - cron: '0 12 * * 1'
+      - cron: '0 12 * * 1'
   workflow_dispatch:   # permite ejecutarlo a mano desde la pestaña Actions
 
 permissions:

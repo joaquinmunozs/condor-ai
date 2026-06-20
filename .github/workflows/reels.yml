@@ -1,9 +1,9 @@
 name: Barbara Reels - videos RRSS
 
 on:
-  # schedule:  # DESACTIVADO en el monorepo (se activa al migrar producción aquí; ver docs/DEPLOY.md)
+  schedule:
     # Mar(2) 09:00 Perú = trailer · Jue(4) 09:00 Perú = ugc  (14:00 UTC)
-    #   - cron: '0 14 * * 2,4'
+      - cron: '0 14 * * 2,4'
   workflow_dispatch:
     inputs:
       tipo:

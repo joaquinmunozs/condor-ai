@@ -1,9 +1,9 @@
 name: Cobros diarios
 
 on:
-  # schedule:  # DESACTIVADO en el monorepo (se activa al migrar producción aquí; ver docs/DEPLOY.md)
+  schedule:
     # Todos los días a las 13:00 UTC (~9:00 am Chile / 8:00 am Perú)
-    #   - cron: '0 13 * * *'
+      - cron: '0 13 * * *'
   workflow_dispatch:
 
 jobs:

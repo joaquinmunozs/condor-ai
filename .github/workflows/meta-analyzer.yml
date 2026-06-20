@@ -1,10 +1,10 @@
 name: Analizador de campaña Meta
 
 on:
-  # schedule:  # DESACTIVADO en el monorepo (se activa al migrar producción aquí; ver docs/DEPLOY.md)
+  schedule:
     # 2 veces al día: 13:00 y 23:00 UTC (~8am y 6pm Perú)
-    #   - cron: '0 13 * * *'
-    #   - cron: '0 23 * * *'
+      - cron: '0 13 * * *'
+      - cron: '0 23 * * *'
   workflow_dispatch:   # botón para correrlo a mano y probar
 
 jobs:
