@@ -30,7 +30,8 @@ jobs:
         run: |
           git config user.name "condor-bot"
           git config user.email "bot@condorai.cl"
-          git add services/meta-analyzer/campaign-log.json
-          if git diff --staged --quiet; then echo "sin cambios"; else
-            for n in 1 2 3; do git pull --rebase origin main && git commit -m "meta: memoria de campaña $(date +%Y-%m-%d_%H%M)" && git push && break || sleep 5; done
+          if git diff --quiet services/meta-analyzer/campaign-log.json; then echo "sin cambios"; else
+            git add services/meta-analyzer/campaign-log.json
+            git commit -m "meta: memoria de campaña $(date +%Y-%m-%d_%H%M)"
+            for n in 1 2 3; do git pull --rebase origin main && git push && break || sleep 5; done
           fi
