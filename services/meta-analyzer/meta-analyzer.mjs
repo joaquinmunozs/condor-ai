@@ -8,13 +8,18 @@
 //   META_AD_ACCOUNT_ID   → act_XXXXXXXXX
 //   ANTHROPIC_API_KEY, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID  (ya existen)
 
-const META_TOKEN = process.env.META_ACCESS_TOKEN;
+import { readFileSync, writeFileSync } from "node:fs";
+const LOG = "services/meta-analyzer/campaign-log.json";
+
+// Limpia espacios/saltos de línea que a veces se pegan al copiar los secrets
+const clean = (s) => (s || "").replace(/[\s\r\n]+/g, "").trim();
+const META_TOKEN = clean(process.env.META_ACCESS_TOKEN);
 // Normaliza el ID: acepta "123...", "act_123...", con espacios o "act_act_..." por error
-let AD_ACCOUNT = (process.env.META_AD_ACCOUNT_ID || "").trim().replace(/^act_/i, "").replace(/[^0-9]/g, "");
+let AD_ACCOUNT = clean(process.env.META_AD_ACCOUNT_ID).replace(/^act_/i, "").replace(/[^0-9]/g, "");
 if (AD_ACCOUNT) AD_ACCOUNT = "act_" + AD_ACCOUNT;
-const AK = process.env.ANTHROPIC_API_KEY;
-const TG = process.env.TELEGRAM_BOT_TOKEN;
-const CHAT = process.env.TELEGRAM_CHAT_ID;
+const AK = clean(process.env.ANTHROPIC_API_KEY);
+const TG = clean(process.env.TELEGRAM_BOT_TOKEN);
+const CHAT = clean(process.env.TELEGRAM_CHAT_ID);
 const API = "https://graph.facebook.com/v21.0";
 
 const tg = (text) => fetch(`https://api.telegram.org/bot${TG}/sendMessage`, {
@@ -58,40 +63,61 @@ async function main() {
   // 0) Moneda de la cuenta (para no confundir soles/pesos)
   const cuenta = await metaGet(`${AD_ACCOUNT}`, { fields: "currency,name" });
 
-  // 1) Campañas activas + sus insights de los últimos 7 días
-  const camps = await metaGet(`${AD_ACCOUNT}/campaigns`, { fields: "name,status,objective", limit: 25 });
+  // 1) Campañas activas (+ fecha de lanzamiento para saber el "día de campaña")
+  const camps = await metaGet(`${AD_ACCOUNT}/campaigns`, { fields: "name,status,objective,created_time,start_time", limit: 25 });
   const activas = (camps.data || []).filter(c => c.status === "ACTIVE");
 
   if (!activas.length) {
-    await tg("📊 *Analizador Meta* — Aún no hay campañas activas. Cuando lances la campaña, te empiezo a reportar 2 veces al día. 🦅");
+    await tg("📊 *Campaña condor.ai* — Aún no hay campaña activa. Cuando lances, te aviso 2 veces al día con cómo va y qué hacer. 🦅");
     console.log("Sin campañas activas"); return;
   }
+
+  const getAcc = (acc, t) => Number((acc.find(a => a.action_type === t) || {}).value || 0);
+  const convDe = (acc) => getAcc(acc, "onsite_conversion.messaging_conversation_started_7d") + getAcc(acc, "onsite_conversion.total_messaging_connection");
+  const moneda = cuenta.currency || "?";
+  const hoy = new Date();
 
   const resumen = [];
   for (const c of activas) {
     try {
-      const ins = await metaGet(`${c.id}/insights`, { fields: INSIGHTS, date_preset: "last_7d", level: "campaign" });
+      // Día de campaña desde el lanzamiento
+      const inicio = new Date(c.start_time || c.created_time || hoy);
+      const diaCampaña = Math.max(1, Math.floor((hoy - inicio) / 86400000) + 1);
+
+      const ins = await metaGet(`${c.id}/insights`, { fields: INSIGHTS, date_preset: "maximum", level: "campaign" });
       const d = (ins.data || [])[0] || {};
-      // Leads / conversaciones de WhatsApp / formularios
       const acc = d.actions || [];
-      const get = (t) => Number((acc.find(a => a.action_type === t) || {}).value || 0);
-      // Conversaciones de WhatsApp iniciadas = la métrica real de una campaña CTWA
-      const convWA = get("onsite_conversion.messaging_conversation_started_7d") + get("onsite_conversion.total_messaging_connection");
-      const leadsForm = get("lead") + get("offsite_conversion.fb_pixel_lead");
+      const convWA = convDe(acc);
+      const leadsForm = getAcc(acc, "lead") + getAcc(acc, "offsite_conversion.fb_pixel_lead");
       const resultados = convWA > 0 ? convWA : leadsForm;
-      const tipoResultado = convWA > 0 ? "conversaciones de WhatsApp" : "leads";
       const spend = Number(d.spend || 0);
+
+      // Desglose por anuncio (para recomendar pausar/escalar)
+      let anuncios = [];
+      try {
+        const ads = await metaGet(`${c.id}/insights`, { fields: "ad_name,spend,actions,ctr", level: "ad", date_preset: "maximum", limit: 30 });
+        anuncios = (ads.data || []).map(a => {
+          const r = convDe(a.actions || []) || (getAcc(a.actions || [], "lead"));
+          const s = Number(a.spend || 0);
+          return { anuncio: a.ad_name, gasto: +s.toFixed(0), resultados: r, costo: r > 0 ? +(s / r).toFixed(0) : null, ctr: +Number(a.ctr || 0).toFixed(2) };
+        }).sort((x, y) => (y.resultados - x.resultados));
+      } catch { /* */ }
+
       resumen.push({
-        campaña: c.name, objetivo: c.objective, moneda: cuenta.currency || "?",
-        gasto: +spend.toFixed(0), impresiones: Number(d.impressions || 0), alcance: Number(d.reach || 0),
-        frecuencia: +Number(d.frequency || 0).toFixed(2), cpm: +Number(d.cpm || 0).toFixed(0),
-        ctr: +Number(d.ctr || 0).toFixed(2), clics: Number(d.clicks || 0),
-        resultados, tipo_resultado: tipoResultado,
+        campaña: c.name, dia_de_campaña: diaCampaña, fase_aprendizaje: resultados < 50 ? "EN APRENDIZAJE (no tocar aún)" : "fuera de aprendizaje",
+        moneda, gasto: +spend.toFixed(0),
+        frecuencia: +Number(d.frequency || 0).toFixed(2), cpm: +Number(d.cpm || 0).toFixed(0), ctr: +Number(d.ctr || 0).toFixed(2),
+        resultados, tipo_resultado: convWA > 0 ? "conversaciones de WhatsApp" : "leads",
         costo_por_resultado: resultados > 0 ? +(spend / resultados).toFixed(0) : null,
-        calidad_creativo: d.quality_ranking,
+        anuncios,
       });
-    } catch (e) { resumen.push({ nombre: c.name, error: String(e).slice(0, 120) }); }
+    } catch (e) { resumen.push({ campaña: c.name, error: String(e).slice(0, 120) }); }
   }
+
+  // Memoria: reportes anteriores (tendencia)
+  let historial = [];
+  try { historial = JSON.parse(readFileSync(LOG, "utf8")); } catch { /* */ }
+  const tendencia = historial.slice(-6).map(h => `- Día ${h.dia} (${h.fecha}): ${h.resultados} result. a ${h.moneda} ${h.costo}/u, gasto ${h.gasto}`).join("\n") || "(primer reporte)";
 
   // 2) Claude analiza como un socio cercano (humano, corto, sin tecnicismos)
   const horaCL = new Date(Date.now() - 4 * 3600000).toISOString().slice(11, 16); // UTC-4 Chile
@@ -105,25 +131,39 @@ REGLAS DE ESTILO (muy importante):
 - Habla en la moneda que te paso (no inventes USD si es PEN o CLP).
 - Lo más importante en campañas de WhatsApp (CTWA) es: cuántas CONVERSACIONES se iniciaron y a qué costo. Esa es la métrica que importa, NO el "CPL" de pixel.
 
-QUÉ DECIR (en lenguaje simple, fluido, sin listas numeradas rígidas):
-- Cómo viene hoy (resultados y costo por conversación, con un 🟢/🟡/🔴 según qué tan bien va).
-- Una observación de por qué (creativo, audiencia o respuesta rápida en WhatsApp).
-- 1 o 2 consejos concretos y fáciles. Si el costo por conversación es bajo y hay buen volumen, FELICÍTALO y dile que escale; no lo asustes.
+QUÉ DECIR (lenguaje simple, fluido):
+- Cómo viene hoy: di el DÍA DE CAMPAÑA, los resultados y el costo por conversación (🟢/🟡/🔴).
+- Compara con la tendencia que te paso (¿mejora o empeora vs días anteriores?).
+- DECISIONES DE ACCIÓN concretas mirando el desglose por anuncio: qué anuncio PAUSAR (el que gasta y no trae resultados), cuál ESCALAR (el ganador), si conviene SUBIR presupuesto (máx +20-30%, nunca el doble) o ajustar público.
 
-Benchmarks reales para WhatsApp en Perú: una conversación iniciada a menos de ~S/5 es EXCELENTE, hasta ~S/15 es buena. Lo que importa es que esas conversaciones se conviertan en clientes (responder rápido). Si el gasto total aún es bajo, está aprendiendo, tranquilo.`;
+REGLAS DEL ALGORITMO DE META (úsalas para decidir):
+- Fase de aprendizaje = primeras ~50 conversiones o primeros ~3-4 días: NO tocar nada, dejar estabilizar.
+- Si ya salió de aprendizaje y el costo por conversación es bueno y estable: se puede escalar el anuncio ganador +20-30% cada 3-4 días.
+- Si un anuncio gastó bastante y trae 0-1 resultados: PAUSARLO.
+- Nunca cambiar varias cosas de golpe ni subir presupuesto >30% (resetea el aprendizaje).
+- Frecuencia > 3 = fatiga, hay que refrescar creativo.
+
+Benchmark WhatsApp Perú/Chile: conversación a menos de ~CLP 1000 (~S/5) es EXCELENTE, hasta ~CLP 3000 buena. Lo que de verdad importa es que esas conversaciones se conviertan en clientes (responder rápido). Felicita si va bien, no asustes.`;
 
   const resp = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: { "x-api-key": AK, "anthropic-version": "2023-06-01", "content-type": "application/json" },
     body: JSON.stringify({
-      model: "claude-haiku-4-5", max_tokens: 700, system: sys,
-      messages: [{ role: "user", content: "Datos de la campaña (últimos 7 días):\n" + JSON.stringify(resumen, null, 2) + "\n\nEscríbele a Joaquín el mensaje corto y humano por Telegram." }],
+      model: "claude-haiku-4-5", max_tokens: 800, system: sys,
+      messages: [{ role: "user", content: `Datos de la campaña hoy:\n${JSON.stringify(resumen, null, 2)}\n\nTendencia de días anteriores (tu memoria):\n${tendencia}\n\nEscríbele a Joaquín el mensaje corto y humano por Telegram, con la decisión de qué hacer.` }],
     }),
   });
   const data = await resp.json();
   const analisis = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("") || "Sin análisis.";
 
   await tg(`📊 *Campaña condor.ai* · ${horaCL} hrs\n\n${analisis}`);
+
+  // Guardar este reporte en la memoria (tendencia)
+  try {
+    const r0 = resumen.find(r => r.resultados != null) || resumen[0] || {};
+    historial.push({ fecha: hoy.toISOString().slice(0, 10), dia: r0.dia_de_campaña || null, resultados: r0.resultados || 0, costo: r0.costo_por_resultado || null, gasto: r0.gasto || 0, moneda: r0.moneda || "" });
+    writeFileSync(LOG, JSON.stringify(historial.slice(-60), null, 2) + "\n");
+  } catch (e) { console.log("no se pudo guardar memoria:", String(e).slice(0, 80)); }
   console.log("OK análisis enviado");
 }
 
