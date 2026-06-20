@@ -1,20 +1,34 @@
 # Nicolás — Reportes de ingresos
 
-Agente que corre semanalmente (viernes) y mensualmente (día 30) para generar reportes de ingresos en Google Sheets y enviarlos a Telegram.
+Agente que corre semanalmente (viernes) y mensualmente (día 30) para generar reportes
+de ingresos en Google Sheets y enviarlos a Telegram.
+
+Escribe en Google Sheets vía un **Apps Script Web App** (no usa claves de cuenta de
+servicio, así evita la política de seguridad `iam.disableServiceAccountKeyCreation`
+de la organización).
 
 ## Setup previo (una sola vez)
 
-1. Google Cloud Console → crear proyecto → habilitar Google Sheets API
-2. Crear Service Account → descargar JSON
-3. Crear Google Spreadsheet → copiar ID de la URL
-4. Compartir el Spreadsheet con el `client_email` del JSON (rol Editor)
+1. Crea un Google Sheet nuevo (en la cuenta que quieras que sea la dueña).
+2. En la hoja: **Extensiones → Apps Script**. Borra lo que haya y pega TODO el
+   contenido de `AppsScript.gs`.
+3. En la línea `const TOKEN = "..."` pon una clave secreta larga que inventes
+   (ej. `nicolas_x9k2_2026`). Anótala.
+4. **Implementar → Nueva implementación → Tipo: Aplicación web**:
+   - Ejecutar como: **Yo**
+   - Quién tiene acceso: **Cualquier persona**
+   - Implementar → autoriza con tu cuenta.
+5. Copia la **URL de la app web** (termina en `/exec`).
 
 ## Secrets en GitHub
 
-- `GOOGLE_SERVICE_ACCOUNT_JSON` — contenido completo del JSON descargado
-- `GOOGLE_SPREADSHEET_ID` — ID del spreadsheet (entre `/d/` y `/edit` en la URL)
+`Settings → Secrets and variables → Actions → New repository secret`
+
+- `NICOLAS_SHEETS_URL` — la URL del Apps Script (termina en `/exec`)
+- `NICOLAS_SHEETS_TOKEN` — el TOKEN que pusiste en el Apps Script
 - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `ANTHROPIC_API_KEY` — ya existen
 
 ## Correr manualmente
 
-En GitHub Actions → Nicolás → Run workflow → elegir modo `semanal` o `mensual`.
+En GitHub Actions → "Nicolás — Reportes de ingresos" → Run workflow → elegir modo
+`semanal` o `mensual`.

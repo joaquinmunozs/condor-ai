@@ -1,24 +1,25 @@
 // condor.ai · Nicolás — Reportes de ingresos semanales y mensuales
-// Semanal (viernes): lee pagos de la semana → Google Sheets nueva hoja → link a Telegram
+// Semanal (viernes): lee pagos de la semana → Google Sheets (Apps Script) → link a Telegram
 // Mensual (día 30): consolida el mes → análisis Claude → Telegram
 //
+// Escribe en Google Sheets vía un Apps Script Web App (sin claves de servicio,
+// evita la política iam.disableServiceAccountKeyCreation de la organización).
+//
 // Secrets: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID,
-//          GOOGLE_SERVICE_ACCOUNT_JSON, GOOGLE_SPREADSHEET_ID, ANTHROPIC_API_KEY
-
-import { createSign } from "node:crypto";
+//          NICOLAS_SHEETS_URL, NICOLAS_SHEETS_TOKEN, ANTHROPIC_API_KEY
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SERVICE = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const TG = process.env.TELEGRAM_BOT_TOKEN;
 const CHAT = process.env.TELEGRAM_CHAT_ID;
 const AK = process.env.ANTHROPIC_API_KEY;
-const SA = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON || "{}");
-const SHEET_ID = (process.env.GOOGLE_SPREADSHEET_ID || "").trim();
+const SHEETS_URL = (process.env.NICOLAS_SHEETS_URL || "").trim();
+const SHEETS_TOKEN = (process.env.NICOLAS_SHEETS_TOKEN || "").trim();
 const MODO = process.env.NICOLAS_MODO || "semanal"; // "semanal" | "mensual"
 
 if (!SUPABASE_URL || !SERVICE) { console.error("Faltan SUPABASE_URL / SERVICE_ROLE_KEY"); process.exit(1); }
 if (!TG || !CHAT) { console.error("Faltan TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID"); process.exit(1); }
-if (!SA.client_email || !SHEET_ID) { console.error("Faltan GOOGLE_SERVICE_ACCOUNT_JSON / GOOGLE_SPREADSHEET_ID"); process.exit(1); }
+if (!SHEETS_URL || !SHEETS_TOKEN) { console.error("Faltan NICOLAS_SHEETS_URL / NICOLAS_SHEETS_TOKEN"); process.exit(1); }
 
 // ── Supabase REST ──────────────────────────────────────────────────
 const H = { apikey: SERVICE, Authorization: "Bearer " + SERVICE };
@@ -35,62 +36,17 @@ const tg = (text) => fetch(`https://api.telegram.org/bot${TG}/sendMessage`, {
   body: JSON.stringify({ chat_id: CHAT, text, parse_mode: "Markdown", disable_web_page_preview: true }),
 }).then(r => r.json());
 
-// ── Google OAuth2 con Service Account (sin npm) ────────────────────
-function b64url(obj) {
-  const s = typeof obj === "string" ? obj : JSON.stringify(obj);
-  return Buffer.from(s).toString("base64url");
-}
-
-async function getGoogleToken() {
-  const now = Math.floor(Date.now() / 1000);
-  const header = b64url({ alg: "RS256", typ: "JWT" });
-  const payload = b64url({
-    iss: SA.client_email,
-    scope: "https://www.googleapis.com/auth/spreadsheets",
-    aud: "https://oauth2.googleapis.com/token",
-    iat: now,
-    exp: now + 3600,
-  });
-  const unsigned = `${header}.${payload}`;
-  const sig = createSign("RSA-SHA256").update(unsigned).sign(SA.private_key, "base64url");
-  const jwt = `${unsigned}.${sig}`;
-
-  const r = await fetch("https://oauth2.googleapis.com/token", {
+// ── Google Sheets vía Apps Script Web App ──────────────────────────
+// Envía una matriz de filas; el Apps Script crea/limpia la pestaña y devuelve la URL.
+async function escribirReporte(nombreHoja, filas) {
+  const r = await fetch(SHEETS_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
-      assertion: jwt,
-    }),
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token: SHEETS_TOKEN, hoja: nombreHoja, filas }),
   });
-  const d = await r.json();
-  if (!d.access_token) throw new Error("Google OAuth falló: " + JSON.stringify(d));
-  return d.access_token;
-}
-
-// ── Google Sheets API ──────────────────────────────────────────────
-async function sheetsReq(token, method, path, body) {
-  const r = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}${path}`, {
-    method,
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  const text = await r.text();
-  if (!r.ok) throw new Error("Sheets API: " + text);
-  return JSON.parse(text);
-}
-
-async function crearHoja(token, nombre) {
-  await sheetsReq(token, "POST", ":batchUpdate", {
-    requests: [{ addSheet: { properties: { title: nombre } } }],
-  });
-}
-
-async function escribirHoja(token, nombre, rows) {
-  await sheetsReq(token, "PUT",
-    `/values/${encodeURIComponent(nombre + "!A1")}?valueInputOption=USER_ENTERED`,
-    { values: rows }
-  );
+  const d = await r.json().catch(() => ({}));
+  if (!d.ok) throw new Error("Apps Script: " + (d.error || ("HTTP " + r.status)));
+  return d.url || "https://docs.google.com/spreadsheets";
 }
 
 // ── Datos de Supabase ──────────────────────────────────────────────
@@ -118,12 +74,9 @@ async function obtenerPagos(desde, hasta) {
 }
 
 // ── Informe semanal ────────────────────────────────────────────────
-async function reporteSemanal(token) {
+async function reporteSemanal() {
   const { desde, hasta } = rangoFechas(7);
   const pagos = await obtenerPagos(desde, hasta);
-
-  const semana = `Semana ${desde}`;
-  try { await crearHoja(token, semana); } catch { /* ya existe */ }
 
   const pagados = pagos.filter(p => p.estado === "pagado");
   const pendientes = pagos.filter(p => p.estado === "pendiente");
@@ -131,7 +84,7 @@ async function reporteSemanal(token) {
   const totalPend = pendientes.reduce((s, p) => s + (p.monto || 0), 0);
 
   const headers = ["Cliente", "Plan", "Tipo", "Monto", "Moneda", "Estado", "Fecha"];
-  const rows = [
+  const filas = [
     headers,
     ...pagos.map(p => [
       p.negocio, p.plan, p.tipo || "—",
@@ -140,15 +93,13 @@ async function reporteSemanal(token) {
       (p.creado_en || "").slice(0, 10),
     ]),
     [],
-    ["RESUMEN", "", "", "", "", "", ""],
-    ["Total cobrado", String(totalCobrado), "", "", "", "", ""],
-    ["Total pendiente", String(totalPend), "", "", "", "", ""],
-    ["Pagos confirmados", String(pagados.length), "", "", "", "", ""],
+    ["RESUMEN"],
+    ["Total cobrado", String(totalCobrado)],
+    ["Total pendiente", String(totalPend)],
+    ["Pagos confirmados", String(pagados.length)],
   ];
 
-  await escribirHoja(token, semana, rows);
-
-  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}`;
+  const url = await escribirReporte(`Semana ${desde}`, filas);
   await tg(`📊 *Nicolás · Reporte semanal*\n_${desde} → ${hasta}_\n\n` +
     `✅ Cobrado: *${totalCobrado.toLocaleString()}* (${pagados.length} pagos)\n` +
     `⏳ Pendiente: ${totalPend.toLocaleString()} (${pendientes.length} cobros)\n\n` +
@@ -156,12 +107,9 @@ async function reporteSemanal(token) {
 }
 
 // ── Informe mensual con análisis Claude ────────────────────────────
-async function reporteMensual(token) {
+async function reporteMensual() {
   const { desde, hasta } = rangoFechas(30);
   const pagos = await obtenerPagos(desde, hasta);
-
-  const mes = `Mes ${new Date().toISOString().slice(0, 7)}`;
-  try { await crearHoja(token, mes); } catch { /* ya existe */ }
 
   const pagados = pagos.filter(p => p.estado === "pagado");
   const pendientes = pagos.filter(p => p.estado === "pendiente");
@@ -176,7 +124,7 @@ async function reporteMensual(token) {
   }
 
   const headers = ["Cliente", "Plan", "Tipo", "Monto", "Moneda", "Estado", "Fecha"];
-  const rows = [
+  const filas = [
     headers,
     ...pagos.map(p => [
       p.negocio, p.plan, p.tipo || "—",
@@ -185,13 +133,13 @@ async function reporteMensual(token) {
       (p.creado_en || "").slice(0, 10),
     ]),
     [],
-    ["RESUMEN DEL MES", "", "", "", "", "", ""],
-    ["Total cobrado", String(totalCobrado), "", "", "", "", ""],
-    ["Total pendiente", String(totalPend), "", "", "", "", ""],
-    ["Clientes con cobros", String(new Set(pagos.map(p => p.cliente_id)).size), "", "", "", "", ""],
+    ["RESUMEN DEL MES"],
+    ["Total cobrado", String(totalCobrado)],
+    ["Total pendiente", String(totalPend)],
+    ["Clientes con cobros", String(new Set(pagos.map(p => p.cliente_id)).size)],
   ];
 
-  await escribirHoja(token, mes, rows);
+  const url = await escribirReporte(`Mes ${new Date().toISOString().slice(0, 7)}`, filas);
 
   // Análisis humanizado con Claude Haiku
   let analisis = "";
@@ -214,7 +162,6 @@ async function reporteMensual(token) {
     } catch (e) { console.log("Claude análisis falló:", String(e).slice(0, 80)); }
   }
 
-  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}`;
   const msg = `📊 *Nicolás · Cierre del mes ${new Date().toISOString().slice(0, 7)}*\n\n` +
     (analisis ? analisis + "\n\n" : "") +
     `💰 Total cobrado: *${totalCobrado.toLocaleString()}*\n` +
@@ -226,11 +173,10 @@ async function reporteMensual(token) {
 // ── Main ───────────────────────────────────────────────────────────
 async function main() {
   console.log("Nicolás | modo:", MODO);
-  const token = await getGoogleToken();
   if (MODO === "mensual") {
-    await reporteMensual(token);
+    await reporteMensual();
   } else {
-    await reporteSemanal(token);
+    await reporteSemanal();
   }
   console.log("OK");
 }
