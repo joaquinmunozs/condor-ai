@@ -35,7 +35,7 @@ jobs:
           {"access_token":"${{ secrets.HIGGSFIELD_ACCESS_TOKEN }}","refresh_token":"${{ secrets.HIGGSFIELD_REFRESH_TOKEN }}"}
           EOF
       - name: Generar carrusel y enviar a Telegram
-        run: node barbara/barbara.mjs
+        run: node services/barbara/barbara.mjs
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -46,5 +46,5 @@ jobs:
         run: |
           git config user.name "barbara-bot"
           git config user.email "bot@condorai.cl"
-          git add barbara/content-log.json
+          git add services/barbara/content-log.json
           if git diff --staged --quiet; then echo "sin cambios"; else git commit -m "barbara: registro de contenido $(date +%Y-%m-%d)"; git push; fi

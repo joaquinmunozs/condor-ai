@@ -37,7 +37,7 @@ jobs:
           {"access_token":"${{ secrets.HIGGSFIELD_ACCESS_TOKEN }}","refresh_token":"${{ secrets.HIGGSFIELD_REFRESH_TOKEN }}"}
           EOF
       - name: Generar reel y enviar a Telegram
-        run: node barbara/reels.mjs
+        run: node services/barbara/reels.mjs
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -48,7 +48,7 @@ jobs:
         run: |
           git config user.name "barbara-bot"
           git config user.email "bot@condorai.cl"
-          git add barbara/content-log.json
+          git add services/barbara/content-log.json
           if git diff --staged --quiet; then echo "sin cambios"; else
             git commit -m "barbara reels: registro $(date +%Y-%m-%d)"
             for n in 1 2 3; do git pull --rebase origin main && git push && break || sleep 5; done

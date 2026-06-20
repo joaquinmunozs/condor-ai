@@ -18,17 +18,17 @@ jobs:
         with:
           node-version: '22'
       - name: Generar noticias de IA de la semana
-        run: node scripts/noticias-ia.mjs
+        working-directory: apps/web
+        run: node ../../services/noticias/noticias-ia.mjs
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       - name: Commit y push si hay cambios
         run: |
           git config user.name "condor-bot"
           git config user.email "bot@condorai.cl"
-          git add assets/noticias-ia.json noticias-ia/index.html
+          git add apps/web/assets/noticias-ia.json apps/web/noticias-ia/
           if git diff --staged --quiet; then
             echo "Sin cambios esta semana"
           else
-            git commit -m "chore: noticias IA semanal ($(date +%Y-%m-%d))"
-            git push
+            for n in 1 2 3; do git pull --rebase origin main && git commit -m "chore: noticias IA semanal ($(date +%Y-%m-%d))" && git push && break || sleep 5; done
           fi

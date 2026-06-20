@@ -16,7 +16,7 @@ jobs:
         with:
           node-version: '22'
       - name: Analizar campañas y avisar por Telegram
-        run: node meta-analyzer/meta-analyzer.mjs
+        run: node services/meta-analyzer/meta-analyzer.mjs
         env:
           META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
           META_AD_ACCOUNT_ID: ${{ secrets.META_AD_ACCOUNT_ID }}
