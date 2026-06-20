@@ -1,0 +1,55 @@
+name: Barbara Reels - videos RRSS
+
+on:
+  # schedule:  # DESACTIVADO en el monorepo (se activa al migrar producción aquí; ver docs/DEPLOY.md)
+    # Mar(2) 09:00 Perú = trailer · Jue(4) 09:00 Perú = ugc  (14:00 UTC)
+    #   - cron: '0 14 * * 2,4'
+  workflow_dispatch:
+    inputs:
+      tipo:
+        description: 'trailer | ugc | test  (vacío = según el día)'
+        required: false
+        default: ''
+      retry:
+        description: 'poner 1 para reintento'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  reels:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: ffmpeg (para unir clips)
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Instalar CLI de Higgsfield
+        run: npm install -g @higgsfield/cli
+      - name: Autenticar Higgsfield
+        run: |
+          mkdir -p ~/.config/higgsfield
+          cat > ~/.config/higgsfield/credentials.json <<EOF
+          {"access_token":"${{ secrets.HIGGSFIELD_ACCESS_TOKEN }}","refresh_token":"${{ secrets.HIGGSFIELD_REFRESH_TOKEN }}"}
+          EOF
+      - name: Generar reel y enviar a Telegram
+        run: node barbara/reels.mjs
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TIPO: ${{ github.event.inputs.tipo }}
+          RETRY: ${{ github.event.inputs.retry }}
+      - name: Guardar memoria
+        run: |
+          git config user.name "barbara-bot"
+          git config user.email "bot@condorai.cl"
+          git add barbara/content-log.json
+          if git diff --staged --quiet; then echo "sin cambios"; else
+            git commit -m "barbara reels: registro $(date +%Y-%m-%d)"
+            for n in 1 2 3; do git pull --rebase origin main && git push && break || sleep 5; done
+          fi

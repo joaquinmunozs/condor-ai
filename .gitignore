@@ -1,0 +1,8 @@
+node_modules/
+.temp/
+.DS_Store
+*.log
+.env
+.env.*
+supabase/.temp/
+**/credentials.json

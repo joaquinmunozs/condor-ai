@@ -1,0 +1,50 @@
+name: Barbara - carruseles RRSS
+
+on:
+  # schedule:  # DESACTIVADO en el monorepo (se activa al migrar producción aquí; ver docs/DEPLOY.md)
+    # Lun(1) 09:00, Mié(3) 09:00, Vie(5) 09:00 hora Perú (14:00 UTC)
+    #   - cron: '0 14 * * 1,3,5'
+  workflow_dispatch:
+    inputs:
+      dia:
+        description: 'lunes | miercoles | viernes | test  (vacío = según el día)'
+        required: false
+        default: ''
+      retry:
+        description: 'poner 1 para reintento (mejora el contenido)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  barbara:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Instalar CLI de Higgsfield
+        run: npm install -g @higgsfield/cli
+      - name: Autenticar Higgsfield (escribir credenciales)
+        run: |
+          mkdir -p ~/.config/higgsfield
+          cat > ~/.config/higgsfield/credentials.json <<EOF
+          {"access_token":"${{ secrets.HIGGSFIELD_ACCESS_TOKEN }}","refresh_token":"${{ secrets.HIGGSFIELD_REFRESH_TOKEN }}"}
+          EOF
+      - name: Generar carrusel y enviar a Telegram
+        run: node barbara/barbara.mjs
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          DIA: ${{ github.event.inputs.dia }}
+          RETRY: ${{ github.event.inputs.retry }}
+      - name: Guardar memoria (content-log)
+        run: |
+          git config user.name "barbara-bot"
+          git config user.email "bot@condorai.cl"
+          git add barbara/content-log.json
+          if git diff --staged --quiet; then echo "sin cambios"; else git commit -m "barbara: registro de contenido $(date +%Y-%m-%d)"; git push; fi
