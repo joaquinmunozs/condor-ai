@@ -2,9 +2,8 @@ name: Analizador de campaña Meta
 
 on:
   schedule:
-    # 2 veces al día: 13:00 y 23:00 UTC (~8am y 6pm Perú)
-      - cron: '0 13 * * *'
-      - cron: '0 23 * * *'
+    # 1 vez al día: 00:00 UTC (~9 PM Chile invierno / 8 PM Perú)
+      - cron: '0 0 * * *'
   workflow_dispatch:   # botón para correrlo a mano y probar
 
 permissions:

@@ -68,8 +68,7 @@ async function main() {
   const activas = (camps.data || []).filter(c => c.status === "ACTIVE");
 
   if (!activas.length) {
-    await tg("📊 *Campaña condor.ai* — Aún no hay campaña activa. Cuando lances, te aviso 2 veces al día con cómo va y qué hacer. 🦅");
-    console.log("Sin campañas activas"); return;
+    console.log("Sin campañas activas — no se envía nada"); return;
   }
 
   const getAcc = (acc, t) => Number((acc.find(a => a.action_type === t) || {}).value || 0);
@@ -153,8 +152,10 @@ Benchmark WhatsApp Perú/Chile: conversación a menos de ~CLP 1000 (~S/5) es EXC
       messages: [{ role: "user", content: `Datos de la campaña hoy:\n${JSON.stringify(resumen, null, 2)}\n\nTendencia de días anteriores (tu memoria):\n${tendencia}\n\nEscríbele a Joaquín el mensaje corto y humano por Telegram, con la decisión de qué hacer.` }],
     }),
   });
+  if (!resp.ok) { console.error("Claude HTTP", resp.status); return; }
   const data = await resp.json();
-  const analisis = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("") || "Sin análisis.";
+  const analisis = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("").trim();
+  if (!analisis) { console.error("Claude devolvió vacío"); return; }
 
   await tg(`📊 *Campaña condor.ai* · ${horaCL} hrs\n\n${analisis}`);
 
