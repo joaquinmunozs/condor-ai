@@ -23,6 +23,28 @@
     label{font-size:.78rem;color:var(--tx-2);font-weight:600}
     .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
     @media(max-width:640px){.fgrid{grid-template-columns:1fr}.kpis{grid-template-columns:1fr 1fr}}
+    /* ── Calendario ── */
+    .cal-section{margin-top:32px}
+    .cal-nav{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+    .cal-mes{font-size:1rem;font-weight:700;min-width:180px;text-align:center;letter-spacing:-.02em}
+    .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+    .cal-dh{text-align:center;font-size:.7rem;font-weight:700;color:var(--tx-2);padding:6px 0;text-transform:uppercase;letter-spacing:.04em}
+    .cal-dia{min-height:72px;background:var(--bg-2);border:1px solid var(--linea);border-radius:12px;padding:7px;cursor:default;transition:border-color .2s}
+    .cal-dia.otro-mes{opacity:.35}
+    .cal-dia.hoy{border-color:var(--azul);background:rgba(39,71,255,.04)}
+    .cal-dia.tiene-eventos{cursor:pointer}.cal-dia.tiene-eventos:hover{border-color:var(--azul)}
+    .cal-num{font-size:.8rem;font-weight:700;margin-bottom:4px;color:var(--tx-2)}
+    .cal-dia.hoy .cal-num{color:var(--azul)}
+    .cal-chip{font-size:.65rem;font-weight:600;background:var(--azul);color:#fff;border-radius:5px;padding:2px 5px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.4}
+    .cal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center}
+    .cal-overlay.open{display:flex}
+    .cal-modal{background:var(--bg);border-radius:var(--r);padding:28px;width:calc(100% - 40px);max-width:500px;max-height:88vh;overflow-y:auto;box-shadow:var(--sombra)}
+    .cal-modal h3{font-size:1.15rem;margin-bottom:16px}
+    .cal-admins-list{display:flex;flex-wrap:wrap;gap:7px;margin-top:6px;padding:10px;border:1px solid var(--linea);border-radius:10px;min-height:44px}
+    .cal-admin-chip{font-size:.78rem;font-weight:600;padding:5px 11px;border-radius:999px;background:var(--bg-3);border:1.5px solid var(--linea);cursor:pointer;transition:all .2s;user-select:none}
+    .cal-admin-chip.sel{background:var(--azul);color:#fff;border-color:var(--azul)}
+    .cal-msg{font-size:.82rem;color:var(--tx-2);margin-top:8px}
+    @media(max-width:640px){.cal-grid{gap:2px}.cal-dia{min-height:54px;padding:5px}.cal-chip{display:none}.cal-dia.tiene-eventos .cal-num::after{content:" •";color:var(--azul)}}
   </style>
 </head>
 <body>
@@ -79,8 +101,65 @@
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:12px"><h3 style="font-size:1.1rem">👥 Clientes</h3><button class="btn btn-soft mini" id="verArch" onclick="toggleArch()">Ver archivados</button></div>
         <div style="overflow-x:auto"><table id="tabla"><thead><tr><th>Negocio</th><th>Plan</th><th>Setup</th><th>Mensual</th><th>Acciones</th></tr></thead><tbody id="filas"></tbody></table></div>
       </div>
-    </div>
+
+      <!-- ── Calendario ── -->
+      <div class="cal-section">
+        <div class="pcard">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:10px">
+            <h3 style="font-size:1.1rem">📅 Calendario</h3>
+            <button class="btn btn-grad mini" id="btnNuevaReunion">+ Nueva reunión</button>
+          </div>
+          <div class="cal-nav">
+            <button class="btn btn-soft mini" id="calPrev">←</button>
+            <span class="cal-mes" id="calMesLabel"></span>
+            <button class="btn btn-soft mini" id="calNext">→</button>
+          </div>
+          <div class="cal-grid" id="calGrid"></div>
+        </div>
+      </div>
+
+    </div><!-- fin #panel -->
     <p id="cargando" style="color:var(--tx-2);text-align:center">Cargando…</p>
+  </div>
+
+  <!-- Modal nueva reunión -->
+  <div class="cal-overlay" id="calModal">
+    <div class="cal-modal">
+      <h3>Nueva reunión</h3>
+      <label>Título</label><input id="r_titulo" placeholder="Reunión de equipo" style="margin-bottom:8px" />
+      <label>Descripción</label>
+      <textarea id="r_desc" style="width:100%;border:1px solid var(--linea);border-radius:10px;padding:10px 12px;font-family:var(--sf);font-size:.92rem;margin-top:4px;margin-bottom:8px;min-height:70px;resize:vertical" placeholder="Opcional"></textarea>
+      <div class="fgrid">
+        <div><label>Fecha</label><input id="r_fecha" type="date" /></div>
+        <div><label>Hora</label><input id="r_hora" type="time" value="09:00" /></div>
+      </div>
+      <label>Duración</label>
+      <select id="r_dur" style="margin-bottom:8px">
+        <option value="30">30 min</option>
+        <option value="60" selected>1 hora</option>
+        <option value="90">1.5 horas</option>
+        <option value="120">2 horas</option>
+      </select>
+      <label>Participantes (click para seleccionar)</label>
+      <div class="cal-admins-list" id="r_admins"></div>
+      <div style="display:flex;gap:10px;margin-top:18px">
+        <button class="btn btn-grad" id="btnGuardarReunion" style="flex:1">Guardar</button>
+        <button class="btn btn-soft" id="btnCerrarModal">Cancelar</button>
+      </div>
+      <p class="cal-msg" id="calMsg"></p>
+    </div>
+  </div>
+
+  <!-- Detalle reunión -->
+  <div class="cal-overlay" id="calDetalle">
+    <div class="cal-modal" style="max-width:420px">
+      <h3 id="det_titulo" style="margin-bottom:8px"></h3>
+      <p id="det_fecha" style="color:var(--tx-2);font-size:.9rem;margin-bottom:6px"></p>
+      <p id="det_desc" style="margin-bottom:10px;white-space:pre-line"></p>
+      <p id="det_creador" style="color:var(--tx-2);font-size:.82rem;margin-bottom:3px"></p>
+      <p id="det_asistentes" style="color:var(--tx-2);font-size:.82rem"></p>
+      <button class="btn btn-soft" id="btnCerrarDetalle" style="width:100%;margin-top:18px">Cerrar</button>
+    </div>
   </div>
 
   <script>
@@ -114,6 +193,8 @@
       $("login").style.display="none";
       $("btnOut").style.display="inline-flex"; $("panel").style.display="block";
       cargar();
+      upsertPerfil(user);
+      cargarCalendario();
     }
 
     let verArchivados=false;
@@ -227,6 +308,153 @@
     };
     $("btnOut").onclick=async()=>{ await sb.auth.signOut(); location.reload(); };
     sb.auth.onAuthStateChange((_e,s)=>{ if(s) afterAuth(); });
+
+    // ── Calendario ────────────────────────────────────────────────
+    let calFecha = new Date();
+    let calReuniones = [];
+    let adminsList = [];
+    let selectedAdmins = new Set();
+    let currentUser = null;
+
+    async function upsertPerfil(user) {
+      currentUser = user;
+      const nombre = (user.email || "").split("@")[0];
+      await sb.from("admin_profiles").upsert({ id: user.id, email: user.email, nombre }, { onConflict: "id" });
+    }
+
+    async function cargarCalendario() {
+      const año = calFecha.getFullYear();
+      const mes = calFecha.getMonth();
+      const desde = new Date(año, mes, 1).toISOString();
+      const hasta = new Date(año, mes + 1, 0, 23, 59, 59).toISOString();
+
+      const { data } = await sb.from("reuniones").select("*,reuniones_admins(admin_id,admin_profiles(nombre,email))")
+        .gte("fecha_hora", desde).lte("fecha_hora", hasta).order("fecha_hora");
+      calReuniones = data || [];
+      renderCalendario(año, mes);
+    }
+
+    function renderCalendario(año, mes) {
+      const meses = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+      $("calMesLabel").textContent = `${meses[mes]} ${año}`;
+
+      const dias = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
+      const primerDia = new Date(año, mes, 1).getDay();
+      const ultimoDia = new Date(año, mes + 1, 0).getDate();
+      const hoy = new Date();
+
+      let html = dias.map(d => `<div class="cal-dh">${d}</div>`).join("");
+
+      for (let i = 0; i < primerDia; i++) {
+        const d = new Date(año, mes, 0 - (primerDia - i - 1));
+        html += `<div class="cal-dia otro-mes"><div class="cal-num">${d.getDate()}</div></div>`;
+      }
+      for (let d = 1; d <= ultimoDia; d++) {
+        const esHoy = hoy.getFullYear() === año && hoy.getMonth() === mes && hoy.getDate() === d;
+        const clave = `${año}-${String(mes + 1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+        const eventos = calReuniones.filter(r => r.fecha_hora.slice(0, 10) === clave);
+        const chips = eventos.slice(0, 2).map(r =>
+          `<div class="cal-chip">${esc(r.titulo)}</div>`
+        ).join("") + (eventos.length > 2 ? `<div class="cal-chip">+${eventos.length - 2} más</div>` : "");
+        html += `<div class="cal-dia${esHoy ? " hoy" : ""}${eventos.length ? " tiene-eventos" : ""}" data-fecha="${clave}">
+          <div class="cal-num">${d}</div>${chips}
+        </div>`;
+      }
+
+      $("calGrid").innerHTML = html;
+
+      $("calGrid").querySelectorAll(".cal-dia.tiene-eventos").forEach(el => {
+        el.addEventListener("click", () => {
+          const clave = el.dataset.fecha;
+          const eventos = calReuniones.filter(r => r.fecha_hora.slice(0, 10) === clave);
+          if (eventos.length) abrirDetalle(eventos[0]);
+        });
+      });
+    }
+
+    function abrirDetalle(r) {
+      const dt = new Date(r.fecha_hora);
+      const dur = r.duracion_min >= 60 ? `${r.duracion_min/60}h` : `${r.duracion_min} min`;
+      $("det_titulo").textContent = r.titulo;
+      $("det_fecha").textContent = dt.toLocaleDateString("es-CL", {weekday:"long",day:"numeric",month:"long"}) + " · " + dt.toLocaleTimeString("es-CL",{hour:"2-digit",minute:"2-digit"}) + " (" + dur + ")";
+      $("det_desc").textContent = r.descripcion || "";
+      $("det_creador").textContent = "";
+      const participantes = (r.reuniones_admins || []).map(a => a.admin_profiles?.nombre || a.admin_id);
+      $("det_asistentes").textContent = participantes.length ? "Participantes: " + participantes.join(", ") : "";
+      $("calDetalle").classList.add("open");
+    }
+
+    $("calPrev").addEventListener("click", () => {
+      calFecha = new Date(calFecha.getFullYear(), calFecha.getMonth() - 1, 1);
+      cargarCalendario();
+    });
+    $("calNext").addEventListener("click", () => {
+      calFecha = new Date(calFecha.getFullYear(), calFecha.getMonth() + 1, 1);
+      cargarCalendario();
+    });
+
+    $("btnNuevaReunion").addEventListener("click", async () => {
+      $("calMsg").textContent = "";
+      const hoy = new Date().toISOString().slice(0,10);
+      $("r_fecha").value = hoy;
+      $("r_titulo").value = "";
+      $("r_desc").value = "";
+      $("r_hora").value = "09:00";
+      $("r_dur").value = "60";
+      selectedAdmins = new Set();
+
+      const { data: perfiles } = await sb.from("admin_profiles").select("id,nombre,email");
+      adminsList = perfiles || [];
+      $("r_admins").innerHTML = adminsList.map(a =>
+        `<span class="cal-admin-chip" data-id="${a.id}">${esc(a.nombre)}</span>`
+      ).join("");
+      $("r_admins").querySelectorAll(".cal-admin-chip").forEach(chip => {
+        chip.addEventListener("click", () => {
+          const id = chip.dataset.id;
+          if (selectedAdmins.has(id)) { selectedAdmins.delete(id); chip.classList.remove("sel"); }
+          else { selectedAdmins.add(id); chip.classList.add("sel"); }
+        });
+      });
+      $("calModal").classList.add("open");
+    });
+
+    $("btnGuardarReunion").addEventListener("click", async () => {
+      const titulo = $("r_titulo").value.trim();
+      const fecha = $("r_fecha").value;
+      const hora = $("r_hora").value;
+      if (!titulo) { $("calMsg").textContent = "Escribe un título."; return; }
+      if (!fecha || !hora) { $("calMsg").textContent = "Pon la fecha y hora."; return; }
+      $("btnGuardarReunion").disabled = true;
+      $("calMsg").textContent = "Guardando…";
+
+      const fecha_hora = new Date(`${fecha}T${hora}:00`).toISOString();
+      const { data: reunion, error } = await sb.from("reuniones").insert({
+        titulo,
+        descripcion: $("r_desc").value.trim() || null,
+        fecha_hora,
+        duracion_min: +$("r_dur").value,
+        creado_por: currentUser?.id,
+      }).select().single();
+
+      if (error) { $("calMsg").textContent = "Error: " + error.message; $("btnGuardarReunion").disabled = false; return; }
+
+      // El creador también participa, para que la vea en su calendario
+      const participantes = new Set(selectedAdmins);
+      participantes.add(currentUser?.id);
+      const inserts = [...participantes].filter(Boolean).map(admin_id => ({ reunion_id: reunion.id, admin_id }));
+      if (inserts.length) await sb.from("reuniones_admins").insert(inserts);
+
+      $("btnGuardarReunion").disabled = false;
+      $("calModal").classList.remove("open");
+      cargarCalendario();
+    });
+
+    $("btnCerrarModal").addEventListener("click", () => $("calModal").classList.remove("open"));
+    $("btnCerrarDetalle").addEventListener("click", () => $("calDetalle").classList.remove("open"));
+    $("calModal").addEventListener("click", e => { if (e.target === $("calModal")) $("calModal").classList.remove("open"); });
+    $("calDetalle").addEventListener("click", e => { if (e.target === $("calDetalle")) $("calDetalle").classList.remove("open"); });
+    // ── Fin Calendario ─────────────────────────────────────────────
+
     init();
   </script>
 </body>
