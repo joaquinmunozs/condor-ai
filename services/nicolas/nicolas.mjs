@@ -10,15 +10,16 @@
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SERVICE = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const TG = process.env.TELEGRAM_BOT_TOKEN;
-const CHAT = process.env.TELEGRAM_CHAT_ID;
+// Bot propio de Nicolás (distinto al de Barbara). Cae al de siempre si aún no lo creas.
+const TG = process.env.NICOLAS_TELEGRAM_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN;
+const CHAT = process.env.NICOLAS_TELEGRAM_CHAT_ID || process.env.TELEGRAM_CHAT_ID;
 const AK = process.env.ANTHROPIC_API_KEY;
 const SHEETS_URL = (process.env.NICOLAS_SHEETS_URL || "").trim();
 const SHEETS_TOKEN = (process.env.NICOLAS_SHEETS_TOKEN || "").trim();
 const MODO = process.env.NICOLAS_MODO || "semanal"; // "semanal" | "mensual"
 
 if (!SUPABASE_URL || !SERVICE) { console.error("Faltan SUPABASE_URL / SERVICE_ROLE_KEY"); process.exit(1); }
-if (!TG || !CHAT) { console.error("Faltan TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID"); process.exit(1); }
+if (!TG || !CHAT) { console.error("Faltan NICOLAS_TELEGRAM_BOT_TOKEN / NICOLAS_TELEGRAM_CHAT_ID"); process.exit(1); }
 if (!SHEETS_URL || !SHEETS_TOKEN) { console.error("Faltan NICOLAS_SHEETS_URL / NICOLAS_SHEETS_TOKEN"); process.exit(1); }
 
 // ── Supabase REST ──────────────────────────────────────────────────
