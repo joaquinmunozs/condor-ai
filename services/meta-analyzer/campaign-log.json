@@ -1,1 +1,10 @@
-[]
+[
+  {
+    "fecha": "2026-06-20",
+    "dia": 7,
+    "resultados": 220,
+    "costo": 425,
+    "gasto": 93523,
+    "moneda": "CLP"
+  }
+]
