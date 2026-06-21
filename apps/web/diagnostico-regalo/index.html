@@ -402,7 +402,7 @@
         if(r.status===422){ document.getElementById('proc').classList.remove('on'); form.style.display='block'; err.textContent='✕ Pon un correo o WhatsApp real para enviarte tu diagnóstico.'; err.classList.add('on'); return; }
         if(!r.ok) throw new Error('HTTP '+r.status);
         const out=await r.json();
-        if(!out.bloqueado){ localStorage.setItem('condor_diag_usos', usos+1); if(window.fbq) fbq('track','Lead'); }
+        if(!out.bloqueado){ localStorage.setItem('condor_diag_usos', usos+1); if(window.fbq){ fbq('track','CompleteRegistration'); fbq('track','Lead'); } }
         setTimeout(()=>mostrar(out),900);
       }catch(e){
         document.getElementById('proc').classList.remove('on'); form.style.display='block';
