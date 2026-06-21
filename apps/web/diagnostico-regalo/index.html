@@ -381,6 +381,7 @@
     async function enviar(){
       leerCampos();
       datos.modo = "landing"; // usa el prompt director que recomienda páginas web (multi-rubro)
+      datos.event_id = (self.crypto && crypto.randomUUID) ? crypto.randomUUID() : (Date.now()+'-'+Math.random()); // dedup pixel + CAPI
       const hp = form.querySelector('[name="website_url"]'); datos.website_url = hp ? hp.value : '';
       const emailOk = /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test((datos.email||'').trim());
       const telDig = ((datos.whatsapp||'').match(/\d/g)||[]).length;
@@ -402,7 +403,7 @@
         if(r.status===422){ document.getElementById('proc').classList.remove('on'); form.style.display='block'; err.textContent='✕ Pon un correo o WhatsApp real para enviarte tu diagnóstico.'; err.classList.add('on'); return; }
         if(!r.ok) throw new Error('HTTP '+r.status);
         const out=await r.json();
-        if(!out.bloqueado){ localStorage.setItem('condor_diag_usos', usos+1); if(window.fbq){ fbq('track','CompleteRegistration'); fbq('track','Lead'); } }
+        if(!out.bloqueado){ localStorage.setItem('condor_diag_usos', usos+1); if(window.fbq){ fbq('track','CompleteRegistration',{},{eventID:datos.event_id}); fbq('track','Lead',{},{eventID:datos.event_id}); } }
         setTimeout(()=>mostrar(out),900);
       }catch(e){
         document.getElementById('proc').classList.remove('on'); form.style.display='block';

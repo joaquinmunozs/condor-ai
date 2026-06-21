@@ -22,6 +22,39 @@ const CORS = {
 const json = (o: unknown, status = 200) =>
   new Response(JSON.stringify(o), { status, headers: { "Content-Type": "application/json", ...CORS } });
 
+// SHA-256 en hex (Meta exige email/teléfono hasheados para la API de Conversiones)
+async function sha256(s: string): Promise<string> {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+// API de Conversiones de Meta (server-side, robusto: no lo bloquean adblockers)
+const META_PIXEL_ID = "2066041737623288";
+async function metaCAPI(opts: { email: string; phone: string; ip: string; ua: string; eventId: string }) {
+  const token = Deno.env.get("META_CAPI_TOKEN") || Deno.env.get("META_ACCESS_TOKEN");
+  if (!token || !opts.eventId) return;
+  try {
+    const user_data: Record<string, unknown> = { client_ip_address: opts.ip, client_user_agent: opts.ua };
+    if (opts.email) user_data.em = [await sha256(opts.email.trim().toLowerCase())];
+    const phone = (opts.phone || "").replace(/\D/g, "");
+    if (phone.length >= 8) user_data.ph = [await sha256(phone)];
+    await fetch(`https://graph.facebook.com/v21.0/${META_PIXEL_ID}/events?access_token=${token}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        data: [{
+          event_name: "CompleteRegistration",
+          event_time: Math.floor(Date.now() / 1000),
+          action_source: "website",
+          event_source_url: "https://condorai.cl/diagnostico-regalo/",
+          event_id: String(opts.eventId).slice(0, 100), // dedup con el pixel del navegador
+          user_data,
+        }],
+      }),
+    });
+  } catch (e) { console.error("CAPI falló:", String(e).slice(0, 120)); }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
   if (req.method !== "POST") return json({ ok: true, servicio: "condor.ai Diagnóstico" });
@@ -160,6 +193,15 @@ Genera el diagnóstico personalizado del negocio descrito arriba.`;
     });
   } catch (e) {
     console.error("Error guardando lead:", e); // no rompemos la conversión si falla el guardado
+  }
+
+  // ---- API de Conversiones de Meta (server-side) — solo si es lead real (no bloqueado) ----
+  if (!diag.bloqueado) {
+    await metaCAPI({
+      email, phone: whatsapp, ip,
+      ua: req.headers.get("user-agent") || "",
+      eventId: (d["event_id"] ?? "").toString(),
+    });
   }
 
   return json(diag);
