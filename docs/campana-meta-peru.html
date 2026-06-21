@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<style>
+  @page { size: A4; margin: 18mm 16mm; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif; color:#1a1a1a; line-height:1.55; font-size:11.5px; }
+  h1,h2,h3,h4 { font-weight:800; letter-spacing:-.02em; line-height:1.15; }
+  .grad { background:linear-gradient(115deg,#2747ff,#7a5bff,#ff3b4e); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .cover { text-align:center; padding:80px 0 60px; page-break-after:always; }
+  .cover .badge { display:inline-block; font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:#2747ff; font-weight:700; margin-bottom:24px; }
+  .cover h1 { font-size:42px; margin-bottom:18px; }
+  .cover p { font-size:15px; color:#555; max-width:440px; margin:0 auto; }
+  .cover .meta { margin-top:40px; font-size:12px; color:#888; }
+  section { page-break-inside:avoid; margin-bottom:26px; }
+  h2 { font-size:21px; margin:30px 0 6px; padding-bottom:8px; border-bottom:2px solid #2747ff; }
+  h2 .n { color:#2747ff; font-family:monospace; font-size:16px; margin-right:8px; }
+  h3 { font-size:14.5px; margin:18px 0 6px; color:#2747ff; }
+  h4 { font-size:12.5px; margin:12px 0 4px; }
+  p { margin-bottom:8px; }
+  ul, ol { margin:6px 0 10px 20px; }
+  li { margin-bottom:5px; }
+  .card { border:1.5px solid #e3e3ea; border-radius:12px; padding:16px 18px; margin:12px 0; background:#fafaff; page-break-inside:avoid; }
+  .copy { border-left:3px solid #2747ff; background:#f5f6ff; padding:12px 16px; margin:10px 0; border-radius:0 8px 8px 0; page-break-inside:avoid; }
+  .copy .et { font-size:10px; text-transform:uppercase; letter-spacing:.08em; color:#2747ff; font-weight:700; display:block; margin-bottom:6px; }
+  .copy .t { font-weight:600; }
+  .copy .h { margin-top:6px; font-style:italic; color:#444; }
+  .wa { border-left:3px solid #1faf54; background:#f1fbf5; padding:12px 16px; margin:9px 0; border-radius:0 8px 8px 0; page-break-inside:avoid; }
+  .wa .role { font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:#1faf54; font-weight:700; display:block; margin-bottom:4px; }
+  table { width:100%; border-collapse:collapse; margin:10px 0; font-size:11px; }
+  th,td { border:1px solid #ddd; padding:7px 9px; text-align:left; }
+  th { background:#2747ff; color:#fff; font-weight:700; }
+  tr:nth-child(even) td { background:#f7f7fc; }
+  .tag { display:inline-block; background:#eef0ff; color:#2747ff; font-weight:700; font-size:10px; padding:3px 9px; border-radius:999px; }
+  .warn { background:#fff4e5; border:1.5px solid #ffb84d; border-radius:10px; padding:12px 16px; margin:12px 0; }
+  .ok { color:#0a7d4f; font-weight:700; }
+  .step { display:flex; gap:12px; margin:10px 0; page-break-inside:avoid; }
+  .step .num { flex:0 0 28px; height:28px; background:#2747ff; color:#fff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:13px; }
+  .step .body { flex:1; }
+  .small { font-size:10px; color:#888; }
+  .pagebreak { page-break-before:always; }
+  b.k { color:#2747ff; }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <span class="badge">🦅 condor.ai · Guía de campaña</span>
+  <h1>Campaña <span class="grad">Meta Ads</span><br>Perú — Páginas web con IA</h1>
+  <p>Todo lo que necesitas para lanzar tu campaña de cero: copys listos, configuración paso a paso, precios, respuestas de WhatsApp y estrategia de cierre.</p>
+  <div class="meta">Diagnóstico-regalo · condorai.cl/diagnostico-regalo/<br>Pixel de Meta: 865494673236212 · Geo: Perú</div>
+</div>
+
+<!-- 1 -->
+<section>
+<h2><span class="n">01</span>Cómo funciona el embudo</h2>
+<p>Esta campaña <b>no</b> manda al cliente directo a WhatsApp. Lo lleva a un <b class="k">diagnóstico gratis con IA</b> (el "regalo"), y ahí captamos su correo y WhatsApp <b>aunque no nos escriba</b>. Eso nos deja una base de leads para seguir vendiéndoles.</p>
+<div class="card">
+  <b>Anuncio (Meta)</b> → clic → <b>Diagnóstico-regalo</b> (3 preguntas + contacto) → la IA le entrega su diagnóstico → botón <b>WhatsApp</b> → tú cierras la venta.
+</div>
+<p><span class="tag">Ventaja</span> Cada persona que completa el diagnóstico queda guardada con su contacto. Los que no escriben al WhatsApp = tu lista para remarketing (tipo "carrito abandonado").</p>
+</section>
+
+<!-- 2 -->
+<section>
+<h2><span class="n">02</span>Antes de empezar (checklist)</h2>
+<ul>
+  <li><span class="ok">✓</span> <b>Pixel de Meta instalado</b> (ID 865494673236212) — ya está en el funnel, mide cada lead automáticamente.</li>
+  <li><span class="ok">✓</span> <b>Funnel en vivo:</b> condorai.cl/diagnostico-regalo/</li>
+  <li>☐ <b>WhatsApp Business</b> instalado en el celular, con mensaje de bienvenida automático (ver sección 07).</li>
+  <li>☐ <b>Respuestas rápidas</b> guardadas en WhatsApp Business (sección 07).</li>
+  <li>☐ <b>Cuenta publicitaria de Meta</b> con método de pago cargado (tarjeta).</li>
+  <li>☐ <b>Página de Facebook</b> de condor.ai (Meta la exige para anunciar).</li>
+</ul>
+</section>
+
+<!-- 3 -->
+<section>
+<h2><span class="n">03</span>Los copys (texto de los anuncios)</h2>
+<p>Pega cada uno en su anuncio. Estructura de Meta: <b>Texto principal</b> + <b>Titular</b>. Todos llevan al diagnóstico-regalo.</p>
+
+<div class="copy">
+  <span class="et">🥇 Creativo 1 — Ganador (dólar / ganar más)</span>
+  <p class="t">Tu negocio puede estar ganando mucho más de lo que gana hoy. 💰 Te regalamos un diagnóstico con una IA entrenada en las mejores técnicas de marketing: en 30 segundos te dice exactamente qué te está frenando. Gratis 👇</p>
+  <p class="h">Titular: Descubre por qué no vendes más (gratis)</p>
+</div>
+
+<div class="copy">
+  <span class="et">🏋️ Creativo 2 — Miedo / pérdida</span>
+  <p class="t">Tus clientes te están buscando en Google ahora mismo… y le están comprando a tu competencia. Si tu negocio no aparece bien online, los estás regalando. Te mostramos cómo cambiarlo — gratis 👇</p>
+  <p class="h">Titular: Tus clientes te buscan. ¿Te encuentran?</p>
+</div>
+
+<div class="copy">
+  <span class="et">🍽️ Creativo 3 — Nuevo modelo de web</span>
+  <p class="t">Los negocios que más venden ya no usan páginas comunes. Usan un nuevo modelo de web con videos en 4K que crea la IA. 👀 Mira si el tuyo califica — diagnóstico gratis en 30 seg 👇</p>
+  <p class="h">Titular: El nuevo modelo de web que vende solo</p>
+</div>
+
+<div class="copy">
+  <span class="et">🎬 Creativo 4 — Profesional / trailer</span>
+  <p class="t">Tu negocio se merece verse así de profesional online. 🔥 Te regalamos un diagnóstico hecho por IA que te dice qué te falta para vender más por internet. Gratis y al instante 👇</p>
+  <p class="h">Titular: Tu nueva web que VENDE</p>
+</div>
+
+<div class="copy">
+  <span class="et">💵 Creativo 5 — Precio / accesible</span>
+  <p class="t">Lo que una agencia te cobra en un mes, nosotros lo hacemos en 72 horas. Pero antes, descubre gratis qué está frenando tus ventas online con nuestro diagnóstico IA 👇</p>
+  <p class="h">Titular: Web profesional sin agencias caras</p>
+</div>
+</section>
+
+<!-- 4 -->
+<section class="pagebreak">
+<h2><span class="n">04</span>Crear la campaña paso a paso (desde cero)</h2>
+<p class="small">Para quien nunca ha creado una campaña. Hazlo en computador, no en celular.</p>
+
+<div class="step"><div class="num">1</div><div class="body"><h4>Entra al Administrador de Anuncios</h4>Ve a <b>facebook.com/adsmanager</b>. Inicia sesión con la cuenta que administra la página de condor.ai.</div></div>
+<div class="step"><div class="num">2</div><div class="body"><h4>Botón verde "+ Crear"</h4>Arriba a la izquierda. Se abre una ventana para elegir el objetivo.</div></div>
+<div class="step"><div class="num">3</div><div class="body"><h4>Objetivo: "Ventas"</h4>Elige <b class="k">Ventas</b> (Sales). Continuar. <span class="small">Es el que optimiza por personas que van a convertir, no solo clics.</span></div></div>
+<div class="step"><div class="num">4</div><div class="body"><h4>Nombre de la campaña</h4>Ponle algo claro: <b>PERU_Leads_DiagnosticoIA_(mes)</b>. Deja "Campaña Advantage+" activada si te aparece.</div></div>
+<div class="step"><div class="num">5</div><div class="body"><h4>Presupuesto de la campaña</h4>Activa el presupuesto a nivel campaña. Pon <b class="k">S/55 al día</b> (~$15.000 CLP). Tipo: diario.</div></div>
+<div class="step"><div class="num">6</div><div class="body"><h4>Conjunto de anuncios → Conversión</h4>En "Ubicación de conversión" elige <b>Sitio web</b>. En "Evento de conversión" elige <b class="k">Lead</b>. <span class="small">Si no aparece "Lead" todavía, espera a que el pixel reciba el primer lead, o elige "Ver contenido" los primeros días y luego cámbialo a Lead.</span></div></div>
+<div class="step"><div class="num">7</div><div class="body"><h4>Público</h4>Activa <b>Público Advantage+</b> (Meta busca solo). Como guía pon: <b>Ubicación: Perú</b> · <b>Edad: 25-55</b> · <b>Sexo: todos</b>. No agregues intereses al inicio — deja que la IA de Meta encuentre.</div></div>
+<div class="step"><div class="num">8</div><div class="body"><h4>Ubicaciones</h4>Deja <b>Ubicaciones Advantage+</b> (todas). Tus videos rinden muy bien en Reels e Instagram.</div></div>
+<div class="step"><div class="num">9</div><div class="body"><h4>Crear el anuncio</h4>Sube tu primer creativo (imagen o video). Pega el <b>Texto principal</b> y el <b>Titular</b> de la sección 03. En "Sitio web" pon: <b class="k">https://condorai.cl/diagnostico-regalo/</b></div></div>
+<div class="step"><div class="num">10</div><div class="body"><h4>Botón de llamada a la acción</h4>Elige <b>Más información</b> u <b>Obtener oferta</b>.</div></div>
+<div class="step"><div class="num">11</div><div class="body"><h4>Agrega los demás creativos</h4>En el mismo conjunto de anuncios, usa "Crear anuncio" para sumar los otros 4. Todos al mismo destino. <span class="small">4-5 creativos en UN conjunto. No los separes.</span></div></div>
+<div class="step"><div class="num">12</div><div class="body"><h4>Revisar y Publicar</h4>Verifica que el pixel esté activo (te lo muestra en verde). Publica. Meta revisa el anuncio en 1-24 h antes de mostrarlo.</div></div>
+</section>
+
+<!-- 5 -->
+<section>
+<h2><span class="n">05</span>Presupuesto y tiempos</h2>
+<table>
+  <tr><th>Fase</th><th>Días</th><th>Qué hacer</th></tr>
+  <tr><td>Aprendizaje</td><td>1 a 4</td><td>S/55/día. <b>No toques NADA.</b> Meta está aprendiendo.</td></tr>
+  <tr><td>Lectura</td><td>5 a 7</td><td>Revisa resultados. Pausa el peor creativo.</td></tr>
+  <tr><td>Optimización</td><td>8 a 14</td><td>Sube +20-30% al ganador. Refresca creativos cansados.</td></tr>
+  <tr><td>Escalado</td><td>15+</td><td>Sube +20-30% cada 3-4 días, solo si el costo aguanta.</td></tr>
+</table>
+<p><b>Inversión de prueba recomendada:</b> <span class="tag">S/770 en 14 días</span> (~$210.000 CLP).</p>
+</section>
+
+<!-- 6 -->
+<section>
+<h2><span class="n">06</span>Precios a cobrar (Perú)</h2>
+<p>El negocio real está en la <b>mensualidad recurrente</b> (la web "viva" con videos IA, hosting, cambios). El setup es el gancho.</p>
+<table>
+  <tr><th>Plan</th><th>Setup normal</th><th>Oferta FUNDADORES (campaña)</th><th>Mensualidad</th></tr>
+  <tr><td><b>Esencial</b><br><span class="small">Web + Google + WhatsApp</span></td><td>S/690</td><td><b class="ok">GRATIS</b> (primeros 10)</td><td><b>S/149/mes</b></td></tr>
+  <tr><td><b>Pro</b><br><span class="small">+ videos 4K IA de productos</span></td><td>S/990</td><td><b class="ok">GRATIS</b> (primeros 10)</td><td><b>S/199/mes</b></td></tr>
+</table>
+<div class="card">
+  <b>🔥 La oferta gancho de la campaña:</b> "Setup GRATIS para los primeros 10 negocios fundadores" — <b>con candado:</b> permanencia mínima de 6 meses + un testimonio en video cuando vea resultados. Así filtras a los comprometidos, aseguras la recurrencia y consigues prueba social.
+</div>
+<p class="small">Ajusta los montos a tu margen. En Perú una web de agencia cuesta S/800-3.000 de setup; tú regalas eso y cobras la mensualidad, que es menos que un día de insumos del negocio.</p>
+</section>
+
+<!-- 7 -->
+<section class="pagebreak">
+<h2><span class="n">07</span>Respuestas rápidas de WhatsApp</h2>
+<p>El cliente llega <b>ya con su diagnóstico hecho</b>. Guárdalas como "Respuestas rápidas" en WhatsApp Business para responder en 1 toque. <b class="k">Responde en minutos</b> — eso es lo que más convierte.</p>
+
+<div class="wa"><span class="role">1 · Bienvenida (automática)</span>¡Hola! 🦅 Soy del equipo de condor.ai. Vi que hiciste tu diagnóstico gratis 🙌 Cuéntame, ¿cómo se llama tu negocio y a qué se dedica?</div>
+
+<div class="wa"><span class="role">2 · Mostrar la demo (el arma secreta)</span>Buenísimo 🙌 Mira un ejemplo real de cómo se vería tu web con el nuevo modelo 👇<br>[LINK a tu demo]<br>Fíjate cómo los productos se ven en video 4K — eso es lo que hace que la gente ANTOJE y compre. Imagínalo con lo tuyo 😏</div>
+
+<div class="wa"><span class="role">3 · La oferta fundadores</span>Te cuento algo 🚀 Justo estamos eligiendo a los primeros 10 negocios FUNDADORES. A ellos les hacemos la web completa con SETUP GRATIS (normalmente S/690), solo a cambio de 2 cosas:<br>✅ Que se queden mínimo 6 meses<br>✅ Un testimonio en video cuando veas resultados<br>Después solo pagas S/149 al mes (web viva, videos IA, hosting y cambios). Quedan pocos cupos. ¿Te aseguro el tuyo?</div>
+
+<div class="wa"><span class="role">4 · Cierre directo</span>¡Genial! 🙌 Para empezar te paso el link para coordinar todo 👇 [LINK de onboarding/pago]. En 48-72 h tienes tu web lista. ¿Avanzamos?</div>
+
+<h3>Manejo de objeciones (ten estas listas)</h3>
+<div class="wa"><span class="role">"¿Cuánto cuesta?"</span>El setup para los fundadores es GRATIS. Solo la mensualidad de S/149, que es menos de lo que gastas en un día de tu negocio, y te trabaja todo el mes 😉</div>
+<div class="wa"><span class="role">"Lo voy a pensar"</span>Total, sin presión 🙌 Solo te aviso que los cupos fundadores son 10 y van rápido. ¿Te aparto el tuyo sin compromiso por 48 h?</div>
+<div class="wa"><span class="role">"Ya tengo Instagram"</span>¡Perfecto, eso suma! Pero Instagram no aparece en Google cuando alguien busca tu rubro cerca. La web sí — ahí están perdiendo clientes 👀</div>
+<div class="wa"><span class="role">"¿Funciona de verdad?"</span>Mira la demo otra vez 👆 Y por eso pedimos solo 6 meses: si no te gusta, te vas. El riesgo lo ponemos nosotros 💪</div>
+</section>
+
+<!-- 8 -->
+<section>
+<h2><span class="n">08</span>¿Intentar llegar a una reunión o cerrar por chat?</h2>
+<div class="card">
+  <b>Recomendación: cierra por WhatsApp, NO fuerces reunión.</b><br>
+  El ticket es bajo y recurrente (S/149/mes). Agendar videollamada agrega fricción y baja la conversión en este tipo de venta. La demo + la oferta + el link de pago hacen el trabajo en el chat.
+</div>
+<h4>Cuándo SÍ ofrecer una llamada corta (10-15 min):</h4>
+<ul>
+  <li>Cuando el cliente <b>duda mucho</b> o pide ver más ejemplos.</li>
+  <li>Cuando es un negocio <b>más grande</b> (ticket potencial mayor).</li>
+  <li>Frase: <i>"Si prefieres te muestro todo en una llamada rápida de 10 min, ¿te acomoda hoy o mañana?"</i></li>
+</ul>
+<p><b>Regla:</b> ofrece reunión solo como <b>plan B</b> para los indecisos. Al caliente, ciérralo en el chat de una.</p>
+</section>
+
+<!-- 9 -->
+<section>
+<h2><span class="n">09</span>Reglas del algoritmo de Meta (no lo arruines)</h2>
+<ul>
+  <li>❌ <b>No toques nada los primeros 3-4 días.</b> Cada cambio reinicia el aprendizaje.</li>
+  <li>❌ <b>No subas el presupuesto más de +30%</b> de golpe.</li>
+  <li>❌ <b>No cambies varias cosas a la vez.</b> Un cambio, espera, mide.</li>
+  <li>✅ Necesita ~<b>50 leads por semana</b> para "salir de aprendizaje" y abaratar.</li>
+  <li>✅ <b>Frecuencia mayor a 3</b> = la gente ya se cansó del anuncio → cambia el creativo.</li>
+  <li>✅ <b>Responde el WhatsApp en minutos.</b> Meta no lo mide, pero es lo que convierte el lead en venta.</li>
+</ul>
+</section>
+
+<!-- 10 -->
+<section>
+<h2><span class="n">10</span>Estimación de resultados (S/770 · 14 días)</h2>
+<table>
+  <tr><th>Métrica</th><th>Conservador</th><th>Realista</th><th>Optimista</th></tr>
+  <tr><td>Clics a la landing</td><td>600</td><td><b>840</b></td><td>1.100</td></tr>
+  <tr><td>Leads capturados (con contacto)</td><td>150</td><td><b>250</b></td><td>380</td></tr>
+  <tr><td>Costo por lead</td><td>S/5,1</td><td><b>S/3,1</b></td><td>S/2,0</td></tr>
+  <tr><td>Conversaciones WhatsApp</td><td>60</td><td><b>100</b></td><td>150</td></tr>
+  <tr><td>Clientes cerrados (con remarketing)</td><td>12</td><td><b>20</b></td><td>35</td></tr>
+</table>
+<div class="card">
+  💡 <b>20 clientes × S/149/mes = ~S/2.980/mes recurrente</b>, desde una inversión única de S/770. Y te quedan ~150 leads en base para seguir trabajando. El retorno está en la recurrencia: cada cliente que se queda 6 meses vale ~S/900.
+</div>
+<p class="small">Estimación basada en tu campaña previa (conversaciones a buen costo). Los números reales dependen de la velocidad de respuesta en WhatsApp y de qué tan bien cierres. El pixel hará que el costo por lead baje con los días.</p>
+</section>
+
+<section>
+<h2><span class="n">11</span>Resumen — qué hacer esta semana</h2>
+<ol>
+  <li>Deja listo el <b>WhatsApp Business</b> con la bienvenida y las respuestas rápidas (sección 07).</li>
+  <li>Ten a mano el <b>link de tu demo</b> y un <b>link de onboarding/pago</b>.</li>
+  <li>Crea la campaña siguiendo la sección 04. Presupuesto S/55/día.</li>
+  <li>Lanza con 4-5 creativos en UN conjunto de anuncios.</li>
+  <li>NO toques nada 3-4 días. A los 7 días, pausa el peor. A los 14, escala el ganador.</li>
+  <li>Responde cada WhatsApp en minutos. Cierra por chat, reunión solo plan B.</li>
+</ol>
+</section>
+
+<p style="text-align:center; margin-top:30px; font-size:10px; color:#aaa;">condor.ai · Guía de campaña Meta Ads Perú · Pixel 865494673236212</p>
+
+</body>
+</html>
