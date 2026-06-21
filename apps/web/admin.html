@@ -325,11 +325,13 @@
     async function cargarCalendario() {
       const año = calFecha.getFullYear();
       const mes = calFecha.getMonth();
+      // Rango amplio (mes completo en hora local, con margen) para no perder reuniones de borde por UTC
       const desde = new Date(año, mes, 1).toISOString();
-      const hasta = new Date(año, mes + 1, 0, 23, 59, 59).toISOString();
+      const hasta = new Date(año, mes + 1, 1).toISOString();
 
-      const { data } = await sb.from("reuniones").select("*,reuniones_admins(admin_id,admin_profiles(nombre,email))")
+      const { data, error } = await sb.from("reuniones").select("*,reuniones_admins(admin_id,admin_profiles(nombre,email))")
         .gte("fecha_hora", desde).lte("fecha_hora", hasta).order("fecha_hora");
+      if (error) { console.error("⚠️ Calendario — error cargando reuniones:", error.message, "(¿aplicaste reuniones.sql con el fix de recursión en Supabase?)"); }
       calReuniones = data || [];
       renderCalendario(año, mes);
     }
@@ -352,7 +354,7 @@
       for (let d = 1; d <= ultimoDia; d++) {
         const esHoy = hoy.getFullYear() === año && hoy.getMonth() === mes && hoy.getDate() === d;
         const clave = `${año}-${String(mes + 1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
-        const eventos = calReuniones.filter(r => r.fecha_hora.slice(0, 10) === clave);
+        const eventos = calReuniones.filter(r => { const dt = new Date(r.fecha_hora); return dt.getFullYear()===año && dt.getMonth()===mes && dt.getDate()===d; });
         const chips = eventos.slice(0, 2).map(r =>
           `<div class="cal-chip">${esc(r.titulo)}</div>`
         ).join("") + (eventos.length > 2 ? `<div class="cal-chip">+${eventos.length - 2} más</div>` : "");
