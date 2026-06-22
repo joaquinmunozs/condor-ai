@@ -18,7 +18,7 @@ const isTest = (process.env.DIA || "").trim().toLowerCase() === "test" || proces
 const isRetry = process.env.RETRY === "1";
 
 const N_SLIDES = 6;
-const LOG = "barbara/content-log.json";
+const LOG = "services/barbara/content-log.json";
 
 // Día → tipo
 const rawDia = (process.env.DIA || "").trim().toLowerCase();
