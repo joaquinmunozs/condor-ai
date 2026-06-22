@@ -107,6 +107,18 @@ async function main() {
     if (!j.ok) throw new Error("Telegram: " + (j.description || "")); return;
   }
 
+  // 0) Candado anti-doble-publicación: si ya se publicó hoy, no volver a generar
+  //    (evita gastar tokens+créditos si el cron de GitHub se atrasa y choca con un disparo manual).
+  //    Un RETRY=1 sí permite re-generar (es a propósito, cuando el equipo rechaza el contenido).
+  if (!isRetry) {
+    const hoyISO = new Date().toISOString().slice(0, 10);
+    const yaHoy = leerLog().some(e => e.fecha === hoyISO);
+    if (yaHoy) {
+      console.log("Barbara ya publicó hoy (" + hoyISO + "). No se vuelve a generar. Usa 'Denuevo barbara' (RETRY=1) si quieres rehacerlo.");
+      return;
+    }
+  }
+
   // 1) Investigación (solo lunes/viernes)
   let research = "";
   if (tema.investiga) {
