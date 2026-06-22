@@ -102,6 +102,18 @@
         <div style="overflow-x:auto"><table id="tabla"><thead><tr><th>Negocio</th><th>Plan</th><th>Setup</th><th>Mensual</th><th>Acciones</th></tr></thead><tbody id="filas"></tbody></table></div>
       </div>
 
+      <!-- ── Leads de campaña ── -->
+      <div class="pcard">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:10px;flex-wrap:wrap">
+          <h3 style="font-size:1.1rem">📋 Leads de campaña</h3>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-soft mini" id="leadsWA" onclick="verLeads('wa')">🟢 Al WhatsApp</button>
+            <button class="btn btn-soft mini" id="leadsAb" onclick="verLeads('ab')">🟡 Abandonados</button>
+          </div>
+        </div>
+        <div id="leadsCont"></div>
+      </div>
+
       <!-- ── Calendario ── -->
       <div class="cal-section">
         <div class="pcard">
@@ -177,6 +189,10 @@
     const $=id=>document.getElementById(id);
     const esc=s=>String(s||"").replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
     const fmt=(n,m)=> (m||"CLP")+" "+(Number(n||0)).toLocaleString();
+    // ── Conversión de ingresos a CLP ── (ACTUALIZA estas tasas según el dólar/sol del momento)
+    const TASA_CLP = { CLP:1, USD:950, PEN:255 };
+    const COMISION_MP = 0.04; // Mercado Pago retiene ~4% de cada cobro
+    const clp = n => "$"+Math.round(n||0).toLocaleString("es-CL");
 
     const show = (s) => ["step-pass","step-code","step-newpass"].forEach(x=>$(x).style.display = x===s?"block":"none");
     const reMail=/^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -202,22 +218,59 @@
       cargar();
       upsertPerfil(user);
       cargarCalendario();
+      cargarLeads();
+    }
+
+    // ── Panel de Leads de campaña ──
+    let leadsTodos = [], leadsTab = 'wa';
+    async function cargarLeads(){
+      const { data, error } = await sb.from("leads").select("*").order("creado_en",{ascending:false});
+      if (error) { console.error("⚠️ Leads — error:", error.message, "(¿aplicaste leads_modulo_v2.sql en Supabase?)"); }
+      leadsTodos = data || [];
+      renderLeads();
+    }
+    window.verLeads = (t)=>{ leadsTab=t; renderLeads(); };
+    function renderLeads(){
+      const wa = leadsTodos.filter(l=>l.fue_whatsapp);
+      const ab = leadsTodos.filter(l=>!l.fue_whatsapp);
+      if($("leadsWA")) $("leadsWA").textContent = `🟢 Al WhatsApp (${wa.length})`;
+      if($("leadsAb")) $("leadsAb").textContent = `🟡 Abandonados (${ab.length})`;
+      const lista = leadsTab==='wa' ? wa : ab;
+      const catBadge = c => { const m={'Listo para comprar':'b-ok','Interesado':'b-aldia','Explorando':'b-pend'}; return c?`<span class="badge ${m[c]||'b-pend'}">${esc(c)}</span>`:''; };
+      $("leadsCont").innerHTML = lista.map(l=>{
+        const tel = (l.whatsapp||'').replace(/\D/g,'');
+        return `<div style="border:1px solid var(--linea);border-radius:12px;padding:14px;margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center">
+            <b>${esc(l.negocio)||esc(l.tipo)||'Lead'}</b>
+            <span>${catBadge(l.categoria)} ${l.prioridad?`<span class="badge b-aldia">${esc(l.prioridad)}</span>`:''}</span>
+          </div>
+          <div style="color:var(--tx-2);font-size:.8rem;margin:5px 0">${esc(l.tipo)||''}${l.email?` · ${esc(l.email)}`:''}${l.whatsapp?` · ${esc(l.whatsapp)}`:''}</div>
+          ${l.problema?`<p style="font-size:.86rem;margin:6px 0"><b>Problema:</b> ${esc(l.problema)}</p>`:''}
+          ${l.como_cerrar?`<div style="background:rgba(39,71,255,.06);border:1px solid rgba(39,71,255,.15);border-radius:8px;padding:10px;font-size:.84rem;margin-top:6px">🎯 <b>Cómo cerrarlo:</b> ${esc(l.como_cerrar)}</div>`:''}
+          ${tel?`<a class="btn btn-soft mini" style="margin-top:8px" target="_blank" rel="noopener" href="https://wa.me/${tel}">Escribir por WhatsApp →</a>`:''}
+        </div>`;
+      }).join('') || `<p style="color:var(--tx-2);text-align:center;padding:20px">No hay leads en esta categoría todavía.</p>`;
     }
 
     let verArchivados=false;
     async function cargar(){
       const { data:clientes } = await sb.from("clientes").select("*").order("creado_en",{ascending:false});
-      const { data:pagos } = await sb.from("pagos").select("monto,estado,tipo");
+      const { data:pagos } = await sb.from("pagos").select("monto,estado,tipo,cliente_id");
       const activos   = (clientes||[]).filter(c=>!c.archivado);
       const archivados= (clientes||[]).filter(c=>c.archivado);
       const lista = verArchivados ? archivados : activos;
-      const ingresos = (pagos||[]).filter(p=>p.estado==="pagado").reduce((s,p)=>s+(p.monto||0),0);
+      // Moneda de cada pago (viene del cliente) → convertir todo a CLP
+      const monedaDe = {}; (clientes||[]).forEach(c=>{ monedaDe[c.id]=c.moneda||"CLP"; });
+      const aCLP = p => (p.monto||0) * (TASA_CLP[monedaDe[p.cliente_id]||"CLP"]||1);
+      const pagados = (pagos||[]).filter(p=>p.estado==="pagado");
+      const brutoCLP = pagados.reduce((s,p)=>s+aCLP(p),0);
+      const netoCLP  = brutoCLP * (1 - COMISION_MP); // descontada la comisión de Mercado Pago
       const pend = activos.filter(c=>c.setup_estado!=="pagado").length;
       const morosos = activos.filter(c=>c.irresponsable).length;
       $("kpis").innerHTML=`
         <div class="kpi"><b>${activos.length}</b><span>Clientes activos</span></div>
-        <div class="kpi"><b class="grad-tx">${(ingresos).toLocaleString()}</b><span>Ingresos cobrados</span></div>
-        <div class="kpi"><b>${(pagos||[]).filter(p=>p.estado==='pagado').length}</b><span>Pagos confirmados</span></div>
+        <div class="kpi" title="Convertido a CLP y descontado 4% de comisión de Mercado Pago"><b class="grad-tx">${clp(netoCLP)}</b><span>Ingresos netos (CLP, −4% MP)</span></div>
+        <div class="kpi"><b>${clp(brutoCLP)}</b><span>Ingresos brutos (CLP)</span></div>
         <div class="kpi" ${morosos?'style="border-color:#f3b0b8;background:rgba(255,59,78,.06)"':''}><b style="${morosos?'color:#c0263a':''}">${morosos}</b><span>${morosos?'⚠️ Sin pagar (alerta)':'Sin pagar'}</span></div>`;
       $("verArch").textContent = verArchivados ? `← Ver activos (${activos.length})` : `Ver archivados (${archivados.length})`;
       const badge=(e)=>{const m={pagado:["b-ok","Pagado"],al_dia:["b-aldia","Al día"],vencido:["b-pend","Vencido"],pendiente:["b-pend","Pendiente"]};const[c,t]=m[e]||["b-pend",e||"—"];return `<span class="badge ${c}">${t}</span>`;};
