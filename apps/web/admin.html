@@ -167,6 +167,27 @@
     <p id="cargando" style="color:var(--tx-2);text-align:center">Cargando…</p>
   </div>
 
+  <!-- Modal ficha de cliente -->
+  <div class="cal-overlay" id="fichaModal">
+    <div class="cal-modal" style="max-width:580px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:4px">
+        <h3 id="f_negocio" style="font-size:1.2rem"></h3>
+        <button class="btn btn-soft mini" id="btnCerrarFicha">✕</button>
+      </div>
+      <p id="f_datos" style="color:var(--tx-2);font-size:.84rem;margin-bottom:14px"></p>
+      <div class="kpis" id="f_resumen" style="grid-template-columns:repeat(3,1fr);margin-bottom:8px"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin:16px 0 8px">
+        <h4 style="font-size:.95rem">💳 Pagos y abonos</h4>
+        <button class="btn btn-soft mini" id="btnCobroManual">+ Cobro manual</button>
+      </div>
+      <div id="f_pagos"></div>
+      <h4 style="margin:16px 0 6px;font-size:.95rem">📝 Notas internas</h4>
+      <textarea id="f_notas" style="width:100%;border:1px solid var(--linea);border-radius:10px;padding:10px 12px;font-family:var(--sf);font-size:.9rem;min-height:60px;resize:vertical" placeholder="Notas sobre este cliente…"></textarea>
+      <button class="btn btn-grad mini" id="btnGuardarNotas" style="margin-top:8px">Guardar notas</button>
+      <p id="f_msg" style="font-size:.82rem;color:var(--tx-2);margin-top:8px"></p>
+    </div>
+  </div>
+
   <!-- Modal nueva reunión -->
   <div class="cal-overlay" id="calModal">
     <div class="cal-modal">
@@ -338,12 +359,77 @@
         <td>${fmt(c.mensual_monto,c.moneda)}<br>${badge(c.mensual_estado)}</td>
         <td>${ verArchivados
           ? `<button class="btn btn-soft mini" onclick="restaurar('${c.id}')">Restaurar</button> <button class="btn mini" style="background:#ffe3e6;color:#c0263a" onclick="borrarCliente('${c.id}','${esc(c.negocio||c.email).replace(/'/g,"")}')">Borrar</button>`
-          : `<button class="btn btn-soft mini" onclick="cobro('${c.id}','setup')" title="Copia el link de pago">Link setup</button> <button class="btn btn-soft mini" onclick="cobro('${c.id}','mensual')" title="Copia el link de mensualidad">Link mensual</button> <button class="btn mini" style="background:#e8edff;color:#2747ff" onclick="cobrarCorreo('${c.id}')" title="Envía el cobro por correo al cliente">📧 Enviar cobro</button> <button class="btn btn-soft mini" onclick="archivar('${c.id}')">Archivar</button>` }
+          : `<button class="btn mini" style="background:#e8edff;color:#2747ff" onclick="verFicha('${c.id}')">📂 Ficha</button> <button class="btn btn-soft mini" onclick="cobro('${c.id}','setup')" title="Copia el link de pago">Link setup</button> <button class="btn btn-soft mini" onclick="cobro('${c.id}','mensual')" title="Copia el link de mensualidad">Link mensual</button> <button class="btn btn-soft mini" onclick="cobrarCorreo('${c.id}')" title="Envía el cobro por correo al cliente">📧 Cobro</button> <button class="btn btn-soft mini" onclick="archivar('${c.id}')">Archivar</button>` }
         </td></tr>`).join("") || `<tr><td colspan="5" style="text-align:center;color:var(--tx-2);padding:24px">${verArchivados?"No hay clientes archivados.":"Aún no hay clientes. Crea el primero arriba."}</td></tr>`;
     }
     window.toggleArch=()=>{ verArchivados=!verArchivados; cargar(); };
     window.archivar=async(id)=>{ const {error}=await sb.from("clientes").update({archivado:true}).eq("id",id); if(error)alert("No se pudo archivar: "+error.message); else cargar(); };
     window.restaurar=async(id)=>{ const {error}=await sb.from("clientes").update({archivado:false}).eq("id",id); if(error)alert("No se pudo restaurar: "+error.message); else cargar(); };
+
+    /* ── Ficha de cliente + abonos ── */
+    let fichaCli = null, fichaPagos = [];
+    window.verFicha = async (id) => {
+      const { data: c } = await sb.from("clientes").select("*").eq("id", id).single();
+      if (!c) return;
+      fichaCli = c;
+      const { data: pagos } = await sb.from("pagos").select("*").eq("cliente_id", id).order("creado_en",{ascending:false});
+      fichaPagos = pagos || [];
+      renderFicha();
+      $("fichaModal").classList.add("open");
+    };
+    function renderFicha(){
+      const c = fichaCli, mon = c.moneda||"CLP", t = TASA_CLP[mon]||1;
+      $("f_negocio").textContent = c.negocio || c.email || "Cliente";
+      $("f_datos").innerHTML = `${esc(c.email)||""}${c.plan?` · Plan ${esc(c.plan)}`:""}${c.concepto?` · ${esc(c.concepto)}`:""}${c.web_url?` · <a class="lnk" target="_blank" rel="noopener" href="${esc(c.web_url)}">web ↗</a>`:""}<br>Moneda: ${mon} · Creado: ${fechaHora(c.creado_en)}`;
+      let cobrado=0, abonadoT=0, pendiente=0;
+      fichaPagos.forEach(p=>{ const m=p.monto||0, ab=p.abonado||0;
+        if(p.estado==="pagado"){ cobrado+=m*t; } else { abonadoT+=ab*t; pendiente+=Math.max(0,m-ab)*t; } });
+      $("f_resumen").innerHTML = `
+        <div class="kpi"><b class="grad-tx" style="font-size:1.25rem">${clp(cobrado)}</b><span>Cobrado (CLP)</span></div>
+        <div class="kpi"><b style="font-size:1.25rem">${clp(abonadoT)}</b><span>Abonado (CLP)</span></div>
+        <div class="kpi"><b style="font-size:1.25rem;color:#c0263a">${clp(pendiente)}</b><span>Pendiente (CLP)</span></div>`;
+      $("f_pagos").innerHTML = fichaPagos.map(p=>{
+        const m=p.monto||0, ab=p.abonado||0, falta=Math.max(0,m-ab), pagado=p.estado==="pagado";
+        return `<div style="border:1px solid var(--linea);border-radius:10px;padding:10px 12px;margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+            <b>${p.tipo==="mensual"?"Mensualidad":p.tipo==="setup"?"Setup":(esc(p.tipo)||"Cobro")} · ${fmt(m,mon)}</b>
+            ${pagado?'<span class="badge b-ok">Pagado</span>':`<span class="badge b-pend">Falta ${fmt(falta,mon)}</span>`}
+          </div>
+          <div style="font-size:.78rem;color:var(--tx-2);margin-top:3px">Abonado: ${fmt(ab,mon)} de ${fmt(m,mon)} · ${fechaHora(p.creado_en)}</div>
+          ${!pagado?`<button class="btn btn-soft mini" style="margin-top:6px" onclick="abonarPago('${p.id}')">💵 Registrar abono</button>`:''}
+        </div>`;
+      }).join("") || `<p style="color:var(--tx-2);font-size:.85rem">Sin pagos registrados. Usa "+ Cobro manual".</p>`;
+      $("f_notas").value = c.notas || "";
+      $("f_msg").textContent = "";
+    }
+    window.abonarPago = async (pagoId) => {
+      const p = fichaPagos.find(x=>String(x.id)===String(pagoId)); if(!p) return;
+      const falta = (p.monto||0)-(p.abonado||0);
+      const v = prompt(`¿Cuánto abonó el cliente? (${fichaCli.moneda||"CLP"})\nFalta por pagar: ${falta}`, String(falta));
+      if(v===null) return;
+      const monto = Math.round(+v||0); if(monto<=0){ alert("Monto inválido"); return; }
+      const nuevoAbonado = Math.min((p.abonado||0)+monto, p.monto||0);
+      const upd = { abonado: nuevoAbonado };
+      if(nuevoAbonado >= (p.monto||0)) upd.estado = "pagado";
+      const { error } = await sb.from("pagos").update(upd).eq("id", p.id);
+      if(error){ alert("No se pudo registrar el abono: "+error.message); return; }
+      await verFicha(fichaCli.id); cargar();
+    };
+    window.cobroManual = async () => {
+      const tipo = prompt("Tipo de cobro (ej: setup, mensual, otro):", "setup"); if(tipo===null) return;
+      const monto = Math.round(+prompt(`Monto total del cobro (${fichaCli.moneda||"CLP"}):`, "0")||0);
+      if(monto<=0){ alert("Monto inválido"); return; }
+      const { error } = await sb.from("pagos").insert({ cliente_id: fichaCli.id, tipo: (tipo.trim()||"otro").toLowerCase(), monto, estado:"pendiente", abonado:0 });
+      if(error){ alert("No se pudo crear el cobro: "+error.message); return; }
+      await verFicha(fichaCli.id); cargar();
+    };
+    $("btnCobroManual").onclick = ()=> cobroManual();
+    $("btnGuardarNotas").onclick = async ()=>{
+      const { error } = await sb.from("clientes").update({ notas: $("f_notas").value.trim() }).eq("id", fichaCli.id);
+      $("f_msg").textContent = error ? ("Error: "+error.message) : "✓ Notas guardadas";
+    };
+    $("btnCerrarFicha").onclick = ()=> $("fichaModal").classList.remove("open");
+    $("fichaModal").addEventListener("click", e=>{ if(e.target===$("fichaModal")) $("fichaModal").classList.remove("open"); });
     window.borrarCliente=async(id,nombre)=>{
       if(!confirm("¿Borrar definitivamente a "+nombre+"?\n\nEsto elimina su ficha y TODO su historial de pagos. No se puede deshacer.\n\n(Si solo quieres ocultarlo, usa Archivar.)")) return;
       const {error}=await sb.from("clientes").delete().eq("id",id);
