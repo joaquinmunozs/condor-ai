@@ -23,6 +23,20 @@
     label{font-size:.78rem;color:var(--tx-2);font-weight:600}
     .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
     @media(max-width:640px){.fgrid{grid-template-columns:1fr}.kpis{grid-template-columns:1fr 1fr}}
+    /* ── Layout con menú lateral ── */
+    .layout{display:flex;gap:24px;align-items:flex-start}
+    .sidebar{flex:0 0 196px;position:sticky;top:88px;display:flex;flex-direction:column;gap:4px}
+    .nav-item{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:12px;font-weight:600;color:var(--tx-2);cursor:pointer;font-size:.92rem;transition:background .15s,color .15s;user-select:none}
+    .nav-item:hover{background:var(--bg-3)}
+    .nav-item.active{background:var(--azul);color:#fff}
+    .main{flex:1;min-width:0}
+    .modulo{display:none}
+    .modulo.on{display:block;animation:fade .35s ease}
+    @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+    .mod-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+    .mod-head h1{font-size:1.6rem}
+    .lead-fecha{font-family:var(--sf);font-size:.74rem;color:var(--tx-2)}
+    @media(max-width:760px){.layout{flex-direction:column;gap:14px}.sidebar{flex:none;flex-direction:row;overflow-x:auto;position:static;padding-bottom:4px}.nav-item{flex:0 0 auto;font-size:.84rem;padding:9px 13px}}
     /* ── Calendario ── */
     .cal-section{margin-top:32px}
     .cal-nav{display:flex;align-items:center;gap:12px;margin-bottom:14px}
@@ -78,58 +92,77 @@
     </div>
 
     <div id="panel" style="display:none">
-      <h1 style="font-size:1.9rem;margin-bottom:18px">Dashboard <span class="grad-tx">condor.ai</span></h1>
-      <div class="kpis" id="kpis"></div>
+     <div class="layout">
+      <nav class="sidebar">
+        <a class="nav-item active" data-mod="dashboard" onclick="navegar('dashboard')">📊 Dashboard</a>
+        <a class="nav-item" data-mod="leads" onclick="navegar('leads')">📋 Leads</a>
+        <a class="nav-item" data-mod="clientes" onclick="navegar('clientes')">👥 Clientes</a>
+        <a class="nav-item" data-mod="calendario" onclick="navegar('calendario')">📅 Calendario</a>
+      </nav>
+      <div class="main">
 
-      <div class="pcard">
-        <h3 style="font-size:1.1rem;margin-bottom:14px">➕ Nuevo cliente</h3>
-        <div class="fgrid">
-          <div><label>Correo del cliente</label><input id="c_email" type="email" /></div>
-          <div><label>Negocio</label><input id="c_negocio" /></div>
-          <div><label>Plan</label><input id="c_plan" placeholder="Esencial / Pro / Premium" /></div>
-          <div><label>Concepto (qué incluye)</label><input id="c_concepto" placeholder="Landing + Videos IA" /></div>
-          <div><label>Setup (monto)</label><input id="c_setup" type="number" value="0" /></div>
-          <div><label>Mensual (monto)</label><input id="c_mensual" type="number" value="0" /></div>
-          <div><label>Moneda</label><select id="c_moneda"><option>CLP</option><option>PEN</option><option>USD</option></select></div>
-          <div><label>Web del cliente (opcional)</label><input id="c_web" placeholder="https://…" /></div>
-        </div>
-        <button class="btn btn-grad" style="margin-top:14px" id="btnAdd">Crear cliente</button>
-        <p id="addMsg" style="color:var(--tx-2);font-size:.85rem;margin-top:10px"></p>
-      </div>
+        <!-- ── DASHBOARD ── -->
+        <section class="modulo on" data-mod="dashboard">
+          <div class="mod-head"><h1>Dashboard <span class="grad-tx">condor.ai</span></h1></div>
+          <div class="kpis" id="kpis"></div>
+          <div class="kpis" id="kpis2" style="margin-top:4px"></div>
+        </section>
 
-      <div class="pcard">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:12px"><h3 style="font-size:1.1rem">👥 Clientes</h3><button class="btn btn-soft mini" id="verArch" onclick="toggleArch()">Ver archivados</button></div>
-        <div style="overflow-x:auto"><table id="tabla"><thead><tr><th>Negocio</th><th>Plan</th><th>Setup</th><th>Mensual</th><th>Acciones</th></tr></thead><tbody id="filas"></tbody></table></div>
-      </div>
-
-      <!-- ── Leads de campaña ── -->
-      <div class="pcard">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:10px;flex-wrap:wrap">
-          <h3 style="font-size:1.1rem">📋 Leads de campaña</h3>
-          <div style="display:flex;gap:8px">
+        <!-- ── LEADS ── -->
+        <section class="modulo" data-mod="leads">
+          <div class="mod-head">
+            <h1>📋 Leads de campaña</h1>
+            <button class="btn btn-soft mini" onclick="cargarLeads()">🔄 Actualizar</button>
+          </div>
+          <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
             <button class="btn btn-soft mini" id="leadsWA" onclick="verLeads('wa')">🟢 Al WhatsApp</button>
             <button class="btn btn-soft mini" id="leadsAb" onclick="verLeads('ab')">🟡 Abandonados</button>
           </div>
-        </div>
-        <div id="leadsCont"></div>
-      </div>
+          <div id="leadsCont"></div>
+        </section>
 
-      <!-- ── Calendario ── -->
-      <div class="cal-section">
-        <div class="pcard">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:10px">
-            <h3 style="font-size:1.1rem">📅 Calendario</h3>
+        <!-- ── CLIENTES ── -->
+        <section class="modulo" data-mod="clientes">
+          <div class="mod-head"><h1>👥 Clientes</h1></div>
+          <div class="pcard">
+            <h3 style="font-size:1.1rem;margin-bottom:14px">➕ Nuevo cliente</h3>
+            <div class="fgrid">
+              <div><label>Correo del cliente</label><input id="c_email" type="email" /></div>
+              <div><label>Negocio</label><input id="c_negocio" /></div>
+              <div><label>Plan</label><input id="c_plan" placeholder="Esencial / Pro / Premium" /></div>
+              <div><label>Concepto (qué incluye)</label><input id="c_concepto" placeholder="Landing + Videos IA" /></div>
+              <div><label>Setup (monto)</label><input id="c_setup" type="number" value="0" /></div>
+              <div><label>Mensual (monto)</label><input id="c_mensual" type="number" value="0" /></div>
+              <div><label>Moneda</label><select id="c_moneda"><option>CLP</option><option>PEN</option><option>USD</option></select></div>
+              <div><label>Web del cliente (opcional)</label><input id="c_web" placeholder="https://…" /></div>
+            </div>
+            <button class="btn btn-grad" style="margin-top:14px" id="btnAdd">Crear cliente</button>
+            <p id="addMsg" style="color:var(--tx-2);font-size:.85rem;margin-top:10px"></p>
+          </div>
+          <div class="pcard">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:12px"><h3 style="font-size:1.1rem">Lista de clientes</h3><button class="btn btn-soft mini" id="verArch" onclick="toggleArch()">Ver archivados</button></div>
+            <div style="overflow-x:auto"><table id="tabla"><thead><tr><th>Negocio</th><th>Plan</th><th>Setup</th><th>Mensual</th><th>Acciones</th></tr></thead><tbody id="filas"></tbody></table></div>
+          </div>
+        </section>
+
+        <!-- ── CALENDARIO ── -->
+        <section class="modulo" data-mod="calendario">
+          <div class="mod-head">
+            <h1>📅 Calendario</h1>
             <button class="btn btn-grad mini" id="btnNuevaReunion">+ Nueva reunión</button>
           </div>
-          <div class="cal-nav">
-            <button class="btn btn-soft mini" id="calPrev">←</button>
-            <span class="cal-mes" id="calMesLabel"></span>
-            <button class="btn btn-soft mini" id="calNext">→</button>
+          <div class="pcard">
+            <div class="cal-nav">
+              <button class="btn btn-soft mini" id="calPrev">←</button>
+              <span class="cal-mes" id="calMesLabel"></span>
+              <button class="btn btn-soft mini" id="calNext">→</button>
+            </div>
+            <div class="cal-grid" id="calGrid"></div>
           </div>
-          <div class="cal-grid" id="calGrid"></div>
-        </div>
-      </div>
+        </section>
 
+      </div>
+     </div>
     </div><!-- fin #panel -->
     <p id="cargando" style="color:var(--tx-2);text-align:center">Cargando…</p>
   </div>
@@ -193,6 +226,15 @@
     const TASA_CLP = { CLP:1, USD:950, PEN:255 };
     const COMISION_MP = 0.04; // Mercado Pago retiene ~4% de cada cobro
     const clp = n => "$"+Math.round(n||0).toLocaleString("es-CL");
+    // Navegación entre módulos del menú lateral
+    window.navegar = (mod) => {
+      document.querySelectorAll('.modulo').forEach(s => s.classList.toggle('on', s.dataset.mod===mod));
+      document.querySelectorAll('.nav-item').forEach(a => a.classList.toggle('active', a.dataset.mod===mod));
+      window.scrollTo({top:0,behavior:'smooth'});
+    };
+    // Fecha/hora legible y teléfono con prefijo Perú (+51)
+    const fechaHora = s => s ? new Date(s).toLocaleString('es-CL',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
+    function telPrefijo(w){ if(!w) return ''; const t=String(w).trim(); if(t.startsWith('+')) return t; const d=t.replace(/\D/g,''); return d.startsWith('51') ? '+'+d : '+51 '+d; }
 
     const show = (s) => ["step-pass","step-code","step-newpass"].forEach(x=>$(x).style.display = x===s?"block":"none");
     const reMail=/^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -230,21 +272,36 @@
       renderLeads();
     }
     window.verLeads = (t)=>{ leadsTab=t; renderLeads(); };
+    function statsLeads(){
+      const total = leadsTodos.length;
+      const wa = leadsTodos.filter(l=>l.fue_whatsapp).length;
+      const hoyN = new Date().toDateString();
+      const hoy = leadsTodos.filter(l=> l.creado_en && new Date(l.creado_en).toDateString()===hoyN).length;
+      const pct = total ? Math.round(wa/total*100) : 0;
+      const k2 = $("kpis2");
+      if(k2) k2.innerHTML = `
+        <div class="kpi"><b>${total}</b><span>Leads totales</span></div>
+        <div class="kpi"><b class="grad-tx">${wa}</b><span>Fueron al WhatsApp</span></div>
+        <div class="kpi"><b>${pct}%</b><span>Conversión a WhatsApp</span></div>
+        <div class="kpi"><b>${hoy}</b><span>Leads hoy</span></div>`;
+    }
     function renderLeads(){
       const wa = leadsTodos.filter(l=>l.fue_whatsapp);
       const ab = leadsTodos.filter(l=>!l.fue_whatsapp);
       if($("leadsWA")) $("leadsWA").textContent = `🟢 Al WhatsApp (${wa.length})`;
       if($("leadsAb")) $("leadsAb").textContent = `🟡 Abandonados (${ab.length})`;
+      statsLeads();
       const lista = leadsTab==='wa' ? wa : ab;
       const catBadge = c => { const m={'Listo para comprar':'b-ok','Interesado':'b-aldia','Explorando':'b-pend'}; return c?`<span class="badge ${m[c]||'b-pend'}">${esc(c)}</span>`:''; };
       $("leadsCont").innerHTML = lista.map(l=>{
-        const tel = (l.whatsapp||'').replace(/\D/g,'');
+        let tel = (l.whatsapp||'').replace(/\D/g,''); if(tel && !tel.startsWith('51')) tel = '51'+tel;
         return `<div style="border:1px solid var(--linea);border-radius:12px;padding:14px;margin-bottom:10px">
           <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center">
             <b>${esc(l.negocio)||esc(l.tipo)||'Lead'}</b>
             <span>${catBadge(l.categoria)} ${l.prioridad?`<span class="badge b-aldia">${esc(l.prioridad)}</span>`:''}</span>
           </div>
-          <div style="color:var(--tx-2);font-size:.8rem;margin:5px 0">${esc(l.tipo)||''}${l.email?` · ${esc(l.email)}`:''}${l.whatsapp?` · ${esc(l.whatsapp)}`:''}</div>
+          <div style="color:var(--tx-2);font-size:.8rem;margin:5px 0">${esc(l.tipo)||''}${l.email?` · ${esc(l.email)}`:''}${l.whatsapp?` · ${esc(telPrefijo(l.whatsapp))}`:''}</div>
+          <div class="lead-fecha">🕒 ${fechaHora(l.creado_en)}</div>
           ${l.problema?`<p style="font-size:.86rem;margin:6px 0"><b>Problema:</b> ${esc(l.problema)}</p>`:''}
           ${l.como_cerrar?`<div style="background:rgba(39,71,255,.06);border:1px solid rgba(39,71,255,.15);border-radius:8px;padding:10px;font-size:.84rem;margin-top:6px">🎯 <b>Cómo cerrarlo:</b> ${esc(l.como_cerrar)}</div>`:''}
           ${tel?`<a class="btn btn-soft mini" style="margin-top:8px" target="_blank" rel="noopener" href="https://wa.me/${tel}">Escribir por WhatsApp →</a>`:''}
