@@ -153,8 +153,9 @@ Genera el diagnóstico personalizado del negocio descrito arriba.`;
       // Campos internos para categorizar el lead (no se muestran al usuario)
       categoria: { type: "string", enum: ["Listo para comprar", "Interesado", "Explorando"], description: "Qué tan caliente está el lead según sus respuestas" },
       prioridad: { type: "string", enum: ["Alta", "Media", "Baja"], description: "Prioridad comercial de seguimiento" },
+      como_cerrar: { type: "string", description: "NOTA INTERNA para el vendedor de condor.ai (el cliente NUNCA ve esto): cómo cerrar a ESTE lead según su rubro, problema y respuestas. En 2-3 frases concretas: el ángulo de venta a usar, la objeción más probable y cómo rebatirla, y qué oferta destacar (ej. setup gratis fundadores). Tono directo, accionable, como un coach de ventas le habla a su vendedor." },
     },
-    required: ["saludo", "diagnostico", "problemas", "recomendacion", "urgencia", "categoria", "prioridad"],
+    required: ["saludo", "diagnostico", "problemas", "recomendacion", "urgencia", "categoria", "prioridad", "como_cerrar"],
   };
 
   // ---- Llamada a la API de Anthropic ----
@@ -184,13 +185,15 @@ Genera el diagnóstico personalizado del negocio descrito arriba.`;
   }
 
   // ---- Guardar el lead en Supabase (Postgres) ----
+  const proyecto = modo === "landing" ? "pagina-web" : "general";
   try {
     const supa = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-    await supa.from("leads").insert({
-      negocio, tipo, web, clientes_mes: clientes, origen, problema, instagram, whatsapp, email, ip,
+    const { data: filaLead } = await supa.from("leads").insert({
+      negocio, tipo, web, clientes_mes: clientes, origen, problema, instagram, whatsapp, email, ip, proyecto,
       diagnostico: diag.diagnostico ?? "", problemas: diag.problemas ?? [], recomendacion: diag.recomendacion ?? "",
-      categoria: diag.categoria ?? null, prioridad: diag.prioridad ?? null,
-    });
+      categoria: diag.categoria ?? null, prioridad: diag.prioridad ?? null, como_cerrar: diag.como_cerrar ?? null,
+    }).select("id").single();
+    if (filaLead?.id) diag.lead_id = filaLead.id; // se devuelve al frontend para el tracking de WhatsApp
   } catch (e) {
     console.error("Error guardando lead:", e); // no rompemos la conversión si falla el guardado
   }
@@ -204,5 +207,6 @@ Genera el diagnóstico personalizado del negocio descrito arriba.`;
     });
   }
 
+  delete diag.como_cerrar; // nota interna de ventas: se guarda en la DB pero NO se devuelve al navegador del cliente
   return json(diag);
 });
