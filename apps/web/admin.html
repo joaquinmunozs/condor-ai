@@ -127,6 +127,7 @@
     <div class="cal-modal">
       <h3>Nueva reunión</h3>
       <label>Título</label><input id="r_titulo" placeholder="Reunión de equipo" style="margin-bottom:8px" />
+      <label>Cliente (opcional)</label><input id="r_cliente" placeholder="Nombre del cliente / negocio" style="margin-bottom:8px" />
       <label>Descripción</label>
       <textarea id="r_desc" style="width:100%;border:1px solid var(--linea);border-radius:10px;padding:10px 12px;font-family:var(--sf);font-size:.92rem;margin-top:4px;margin-bottom:8px;min-height:70px;resize:vertical" placeholder="Opcional"></textarea>
       <div class="fgrid">
@@ -155,10 +156,16 @@
     <div class="cal-modal" style="max-width:420px">
       <h3 id="det_titulo" style="margin-bottom:8px"></h3>
       <p id="det_fecha" style="color:var(--tx-2);font-size:.9rem;margin-bottom:6px"></p>
+      <p id="det_cliente" style="font-size:.9rem;margin-bottom:6px;font-weight:600"></p>
       <p id="det_desc" style="margin-bottom:10px;white-space:pre-line"></p>
       <p id="det_creador" style="color:var(--tx-2);font-size:.82rem;margin-bottom:3px"></p>
-      <p id="det_asistentes" style="color:var(--tx-2);font-size:.82rem"></p>
-      <button class="btn btn-soft" id="btnCerrarDetalle" style="width:100%;margin-top:18px">Cerrar</button>
+      <p id="det_asistentes" style="color:var(--tx-2);font-size:.82rem;margin-bottom:14px"></p>
+      <label style="font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--tx-2);font-weight:600">Agregar a mi calendario</label>
+      <div style="display:flex;gap:10px;margin:8px 0 4px">
+        <a class="btn btn-soft mini" id="det_gcal" target="_blank" rel="noopener" style="flex:1">📅 Google</a>
+        <button class="btn btn-soft mini" id="det_ical" style="flex:1">🍎 Apple / .ics</button>
+      </div>
+      <button class="btn btn-soft" id="btnCerrarDetalle" style="width:100%;margin-top:14px">Cerrar</button>
     </div>
   </div>
 
@@ -374,15 +381,39 @@
       });
     }
 
+    // Fecha a formato calendario UTC (YYYYMMDDTHHMMSSZ)
+    function fmtCalDate(d){ return d.toISOString().replace(/[-:]/g,"").replace(/\.\d{3}/,""); }
+    function calRango(r){ const ini=new Date(r.fecha_hora); const fin=new Date(ini.getTime()+(r.duracion_min||60)*60000); return {ini,fin}; }
+    function gcalLink(r){
+      const {ini,fin}=calRango(r);
+      const det=(r.cliente?("Cliente: "+r.cliente+"\n"):"")+(r.descripcion||"");
+      const p=new URLSearchParams({action:"TEMPLATE",text:r.titulo||"Reunión",dates:fmtCalDate(ini)+"/"+fmtCalDate(fin),details:det});
+      return "https://calendar.google.com/calendar/render?"+p.toString();
+    }
+    function descargarICS(r){
+      const {ini,fin}=calRango(r);
+      const det=((r.cliente?("Cliente: "+r.cliente+"\\n"):"")+(r.descripcion||"")).replace(/\n/g,"\\n");
+      const ics=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//condor.ai//calendario//ES","BEGIN:VEVENT",
+        "UID:"+(r.id||Date.now())+"@condorai.cl","DTSTAMP:"+fmtCalDate(new Date()),
+        "DTSTART:"+fmtCalDate(ini),"DTEND:"+fmtCalDate(fin),"SUMMARY:"+(r.titulo||"Reunión"),
+        "DESCRIPTION:"+det,"END:VEVENT","END:VCALENDAR"].join("\r\n");
+      const a=document.createElement("a");
+      a.href=URL.createObjectURL(new Blob([ics],{type:"text/calendar"}));
+      a.download=(r.titulo||"reunion").replace(/[^\w]+/g,"_")+".ics"; a.click();
+    }
+
     function abrirDetalle(r) {
       const dt = new Date(r.fecha_hora);
       const dur = r.duracion_min >= 60 ? `${r.duracion_min/60}h` : `${r.duracion_min} min`;
       $("det_titulo").textContent = r.titulo;
       $("det_fecha").textContent = dt.toLocaleDateString("es-CL", {weekday:"long",day:"numeric",month:"long"}) + " · " + dt.toLocaleTimeString("es-CL",{hour:"2-digit",minute:"2-digit"}) + " (" + dur + ")";
+      $("det_cliente").textContent = r.cliente ? "👤 Cliente: " + r.cliente : "";
       $("det_desc").textContent = r.descripcion || "";
       $("det_creador").textContent = "";
       const participantes = (r.reuniones_admins || []).map(a => a.admin_profiles?.nombre || a.admin_id);
       $("det_asistentes").textContent = participantes.length ? "Participantes: " + participantes.join(", ") : "";
+      $("det_gcal").href = gcalLink(r);
+      $("det_ical").onclick = () => descargarICS(r);
       $("calDetalle").classList.add("open");
     }
 
@@ -400,6 +431,7 @@
       const hoy = new Date().toISOString().slice(0,10);
       $("r_fecha").value = hoy;
       $("r_titulo").value = "";
+      $("r_cliente").value = "";
       $("r_desc").value = "";
       $("r_hora").value = "09:00";
       $("r_dur").value = "60";
@@ -429,13 +461,13 @@
       $("btnGuardarReunion").disabled = true;
       $("calMsg").textContent = "Guardando…";
 
+      const cliente = $("r_cliente").value.trim();
+      const descripcion = $("r_desc").value.trim();
+      const duracion_min = +$("r_dur").value;
       const fecha_hora = new Date(`${fecha}T${hora}:00`).toISOString();
       const { data: reunion, error } = await sb.from("reuniones").insert({
-        titulo,
-        descripcion: $("r_desc").value.trim() || null,
-        fecha_hora,
-        duracion_min: +$("r_dur").value,
-        creado_por: currentUser?.id,
+        titulo, cliente: cliente || null, descripcion: descripcion || null,
+        fecha_hora, duracion_min, creado_por: currentUser?.id,
       }).select().single();
 
       if (error) { $("calMsg").textContent = "Error: " + error.message; $("btnGuardarReunion").disabled = false; return; }
@@ -445,6 +477,17 @@
       participantes.add(currentUser?.id);
       const inserts = [...participantes].filter(Boolean).map(admin_id => ({ reunion_id: reunion.id, admin_id }));
       if (inserts.length) await sb.from("reuniones_admins").insert(inserts);
+
+      // Sandra avisa en el grupo de Telegram (no bloquea si falla)
+      try {
+        const { data:{session} } = await sb.auth.getSession();
+        const invitados = adminsList.filter(a => participantes.has(a.id)).map(a => a.nombre);
+        fetch(FUNCTIONS + "/reunion-notificar", {
+          method: "POST",
+          headers: { "Content-Type":"application/json", "Authorization":"Bearer "+session.access_token, "apikey":ANON_KEY },
+          body: JSON.stringify({ titulo, cliente, fecha_hora, duracion_min, descripcion, invitados }),
+        }).catch(()=>{});
+      } catch(e) {}
 
       $("btnGuardarReunion").disabled = false;
       $("calModal").classList.remove("open");
