@@ -9,7 +9,7 @@
 // Secrets: ANTHROPIC_API_KEY, HIGGSFIELD_ACCESS_TOKEN/REFRESH_TOKEN, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
 // Variables: TIPO (ugc|trailer|test) · RETRY=1 (rehacer cuando el equipo rechaza) · INDUSTRIA (forzar rubro)
 
-import { execSync } from "node:child_process";
+import { execSync, execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 
 const AK = process.env.ANTHROPIC_API_KEY;
@@ -53,12 +53,17 @@ const leerLog = () => { try { return JSON.parse(readFileSync(LOG, "utf8")); } ca
 function guardarEnLog(entry) { const log = leerLog(); log.push(entry); writeFileSync(LOG, JSON.stringify(log.slice(-100), null, 2) + "\n"); }
 
 // ---- Higgsfield: generar un clip y devolver su URL ----
-function genVideo(model, prompt, dur, idx, extra = "") {
-  const safe = prompt.replace(/"/g, "'").slice(0, 1500);
-  const out = execSync(
-    `higgsfield generate create ${model} --prompt "${safe}" --aspect_ratio 9:16 --duration ${dur} ${extra} --wait --wait-timeout 14m`,
-    { encoding: "utf8", timeout: 15 * 60 * 1000, stdio: ["ignore", "pipe", "pipe"] }
-  );
+// extraArgs = array de args extra, ej. ["--start-image", AVATAR] o ["--resolution", "720p"].
+// Usamos execFileSync (sin shell) para que los saltos de línea, comillas o $ del prompt
+// NUNCA rompan el comando (el bug que hacía fallar a Barbara con "Command failed").
+function genVideo(model, prompt, dur, idx, extraArgs = []) {
+  const safe = prompt.replace(/\s+/g, " ").trim().slice(0, 1500);
+  const args = [
+    "generate", "create", model, "--prompt", safe,
+    "--aspect_ratio", "9:16", "--duration", String(dur),
+    ...extraArgs, "--wait", "--wait-timeout", "14m",
+  ];
+  const out = execFileSync("higgsfield", args, { encoding: "utf8", timeout: 15 * 60 * 1000, stdio: ["ignore", "pipe", "pipe"] });
   const url = (out.trim().split("\n").pop() || "").trim();
   if (!/^https?:\/\//.test(url)) throw new Error("Higgsfield sin URL (clip " + (idx + 1) + "): " + out.slice(-160));
   return url;
@@ -120,7 +125,7 @@ async function hacerUGC() {
     // Formato de diálogo recomendado para Veo 3: "she says:" con dos puntos, SIN comillas anidadas,
     // y etiqueta Audio. ~22-26 palabras llenan los 8s sin silencios ni repetición.
     const prompt = `${clips[i].escena}\n\nShe looks straight into the camera with authentic energy and speaks continuously for the full 8 seconds in clear neutral Latin American Spanish, natural lip-sync, fluid pacing with no pauses and no dead air. She says: ${clips[i].dialogo}\n\nAudio: only her voice in neutral Latin American Spanish plus subtle room tone, no music. No subtitles. No captions.\n\n${look}`;
-    urls.push(genVideo("veo3_1", prompt, 8, i, `--start-image ${AVATAR}`));
+    urls.push(genVideo("veo3_1", prompt, 8, i, ["--start-image", AVATAR]));
   }
   if (!urls.length) throw new Error("No se generó ningún clip UGC");
   const videoBuf = await unirClips(urls);
@@ -160,7 +165,7 @@ async function hacerTrailer() {
   const clips = (plan.clips || []).slice(0, 2);
 
   const urls = [];
-  for (let i = 0; i < clips.length; i++) urls.push(genVideo("seedance_2_0", clips[i] + "\n\n" + look, 15, i, "--resolution 720p"));
+  for (let i = 0; i < clips.length; i++) urls.push(genVideo("seedance_2_0", clips[i] + "\n\n" + look, 15, i, ["--resolution", "720p"]));
   if (!urls.length) throw new Error("No se generó ningún clip de trailer");
   const videoBuf = await unirClips(urls);
   return { plan, videoBuf, titulo: `🎬 Reel Trailer — IA en ${industria}`, tipoLog: "reel-trailer", extraLog: { industria } };
