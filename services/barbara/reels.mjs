@@ -125,7 +125,7 @@ async function hacerUGC() {
     // Formato de diálogo recomendado para Veo 3: "she says:" con dos puntos, SIN comillas anidadas,
     // y etiqueta Audio. ~22-26 palabras llenan los 8s sin silencios ni repetición.
     const prompt = `${clips[i].escena}\n\nShe looks straight into the camera with authentic energy and speaks continuously for the full 8 seconds in clear neutral Latin American Spanish, natural lip-sync, fluid pacing with no pauses and no dead air. She says: ${clips[i].dialogo}\n\nAudio: only her voice in neutral Latin American Spanish plus subtle room tone, no music. No subtitles. No captions.\n\n${look}`;
-    urls.push(genVideo("veo3_1", prompt, 8, i, ["--start-image", AVATAR]));
+    urls.push(genVideo("veo3_1", prompt, 8, i, ["--image", AVATAR]));
   }
   if (!urls.length) throw new Error("No se generó ningún clip UGC");
   const videoBuf = await unirClips(urls);
