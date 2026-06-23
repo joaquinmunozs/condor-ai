@@ -525,6 +525,8 @@
       await sb.from("admin_profiles").upsert({ id: user.id, email: user.email, nombre }, { onConflict: "id" });
     }
 
+    let perfilesMap = {}; // id de admin -> nombre (para mostrar participantes en el detalle)
+
     async function cargarCalendario() {
       const año = calFecha.getFullYear();
       const mes = calFecha.getMonth();
@@ -532,9 +534,16 @@
       const desde = new Date(año, mes, 1).toISOString();
       const hasta = new Date(año, mes + 1, 1).toISOString();
 
-      const { data, error } = await sb.from("reuniones").select("*,reuniones_admins(admin_id,admin_profiles(nombre,email))")
+      // Mapa de nombres de admins (query aparte; NO anidamos admin_profiles dentro de
+      // reuniones_admins porque no hay FK directa entre ambas y PostgREST da PGRST200).
+      if (!Object.keys(perfilesMap).length) {
+        const { data: perfiles } = await sb.from("admin_profiles").select("id,nombre");
+        (perfiles || []).forEach(p => { perfilesMap[p.id] = p.nombre; });
+      }
+
+      const { data, error } = await sb.from("reuniones").select("*,reuniones_admins(admin_id)")
         .gte("fecha_hora", desde).lte("fecha_hora", hasta).order("fecha_hora");
-      if (error) { console.error("⚠️ Calendario — error cargando reuniones:", error.message, "(¿aplicaste reuniones.sql con el fix de recursión en Supabase?)"); }
+      if (error) { console.error("⚠️ Calendario — error cargando reuniones:", error.message); }
       calReuniones = data || [];
       renderCalendario(año, mes);
     }
@@ -606,7 +615,7 @@
       $("det_cliente").textContent = r.cliente ? "👤 Cliente: " + r.cliente : "";
       $("det_desc").textContent = r.descripcion || "";
       $("det_creador").textContent = "";
-      const participantes = (r.reuniones_admins || []).map(a => a.admin_profiles?.nombre || a.admin_id);
+      const participantes = (r.reuniones_admins || []).map(a => perfilesMap[a.admin_id] || a.admin_id);
       $("det_asistentes").textContent = participantes.length ? "Participantes: " + participantes.join(", ") : "";
       $("det_gcal").href = gcalLink(r);
       $("det_ical").onclick = () => descargarICS(r);
