@@ -86,12 +86,12 @@ const schemaUGC = {
   properties: {
     angulo: { type: "string", description: "Ángulo/idea ÚNICO de hoy en una frase (para no repetir)." },
     clips: {
-      type: "array", description: "Exactamente 4 tomas de 8s, en orden. Toma 1 = HOOK (engancha en los primeros 3s). Toma 4 = CIERRE con CTA.",
+      type: "array", description: "Exactamente 4 tomas de 8s, en orden. Las 4 forman UN SOLO discurso continuo que avanza sin repetir NUNCA una idea o frase ya dicha. Toma 1 = HOOK (engancha en los primeros 3s). Toma 4 = CIERRE con CTA.",
       items: {
         type: "object", additionalProperties: false,
         properties: {
           escena: { type: "string", description: "Descripción EN INGLÉS de la toma (encuadre, gesto, acción de la mujer). Varía encuadres entre tomas (close-up, plano medio) para que los cortes se sientan naturales." },
-          dialogo: { type: "string", description: "La frase EXACTA en español neutro latinoamericano que dice en esta toma (1 frase corta, ~8s al hablar). La toma 4 termina invitando a contactar a condor.ai para implementar IA en su negocio." },
+          dialogo: { type: "string", description: "Lo que dice en esta toma, en español neutro latinoamericano. OBLIGATORIO entre 22 y 26 palabras: debe cubrir los 8 segundos completos de habla continua, sin silencios y SIN repetir nada de las tomas anteriores (cada toma continúa la idea, no la repite). Habla fluida y natural, no apurada. La toma 4 cierra invitando a contactar a condor.ai para implementar IA en su negocio." },
         },
         required: ["escena", "dialogo"],
       },
@@ -107,7 +107,7 @@ async function hacerUGC() {
   const extra = isRetry ? "\n\n⚠️ REINTENTO: el reel anterior fue rechazado. Haz uno claramente mejor y distinto." : "";
   const dir = await claude({
     model: "claude-sonnet-4-6", max_tokens: 2500,
-    system: `Eres Barbara, directora creativa de condor.ai (agencia que implementa IA en negocios de Perú y Chile). Diriges un reel UGC vertical 9:16 de una vocera que habla a cámara en ESPAÑOL NEUTRO sobre lo importante que es implementar IA en tu negocio HOY. Tono cercano, real, energía de creadora auténtica, hook potente en los primeros 3 segundos y mucha retención. NUNCA repites ángulos ni frases de las piezas recientes (te las paso). Responde SOLO con el JSON. Exactamente 4 tomas de ~8s.`,
+    system: `Eres Barbara, directora creativa de condor.ai (agencia que implementa IA en negocios de Perú y Chile). Diriges un reel UGC vertical 9:16 de una vocera que habla a cámara en ESPAÑOL NEUTRO sobre lo importante que es implementar IA en tu negocio HOY. Tono cercano, real, energía de creadora auténtica, hook potente en los primeros 3 segundos y mucha retención. NUNCA repites ángulos ni frases de las piezas recientes (te las paso). Responde SOLO con el JSON.\n\nREGLAS DEL GUION (críticas): son exactamente 4 tomas de 8 segundos que forman UN SOLO monólogo continuo (~95 palabras en total). Cada toma DEBE tener entre 22 y 26 palabras de diálogo para cubrir sus 8 segundos completos de habla fluida y natural (ni apurada ni con silencios). El discurso AVANZA en cada toma: jamás repitas una idea, frase o palabra clave ya usada en una toma anterior. Piensa el guion completo primero y luego pártelo en 4.`,
     output_config: { format: { type: "json_schema", schema: schemaUGC } },
     messages: [{ role: "user", content: `Crea el guion del reel UGC de hoy.\n\nPIEZAS RECIENTES (no repitas estos ángulos):\n${recientes}${extra}\n\nDevuelve 4 tomas (escena + diálogo en español neutro). Toma 1 hook, toma 4 cierre con CTA "contáctanos y vemos cómo implementarla en tu negocio".` }],
   });
@@ -117,7 +117,9 @@ async function hacerUGC() {
   const look = "Authentic UGC selfie-style vertical video, the SAME woman from the reference image (keep her identity, face and outfit consistent), modern bright home office, warm natural lighting, phone-recorded handheld feel, subtle natural motion. This is RAW camera footage only: absolutely NO Instagram interface, NO social media UI, NO story or post frame, NO profile header, NO username, NO like/comment buttons, NO icons, NO on-screen text, NO captions, NO subtitles, NO watermark, NO logos. Just the clean full-frame camera footage of the woman talking.";
   const urls = [];
   for (let i = 0; i < clips.length; i++) {
-    const prompt = `${clips[i].escena}\n\nShe looks at the camera and speaks directly in clear neutral Latin American Spanish, with natural lip-sync and authentic energy, saying exactly: "${clips[i].dialogo}"\n\n${look}`;
+    // Formato de diálogo recomendado para Veo 3: "she says:" con dos puntos, SIN comillas anidadas,
+    // y etiqueta Audio. ~22-26 palabras llenan los 8s sin silencios ni repetición.
+    const prompt = `${clips[i].escena}\n\nShe looks straight into the camera with authentic energy and speaks continuously for the full 8 seconds in clear neutral Latin American Spanish, natural lip-sync, fluid pacing with no pauses and no dead air. She says: ${clips[i].dialogo}\n\nAudio: only her voice in neutral Latin American Spanish plus subtle room tone, no music. No subtitles. No captions.\n\n${look}`;
     urls.push(genVideo("veo3_1", prompt, 8, i, `--start-image ${AVATAR}`));
   }
   if (!urls.length) throw new Error("No se generó ningún clip UGC");
