@@ -114,7 +114,7 @@ async function hacerUGC() {
   const plan = JSON.parse(textOf(dir));
   const clips = (plan.clips || []).slice(0, 4);
 
-  const look = "Authentic UGC vertical video, the SAME woman from the reference image (keep her identity, face and outfit consistent), modern bright home office, warm natural lighting, phone-recorded feel, subtle natural motion. NO logos, NO watermark, NO on-screen text or UI.";
+  const look = "Authentic UGC selfie-style vertical video, the SAME woman from the reference image (keep her identity, face and outfit consistent), modern bright home office, warm natural lighting, phone-recorded handheld feel, subtle natural motion. This is RAW camera footage only: absolutely NO Instagram interface, NO social media UI, NO story or post frame, NO profile header, NO username, NO like/comment buttons, NO icons, NO on-screen text, NO captions, NO subtitles, NO watermark, NO logos. Just the clean full-frame camera footage of the woman talking.";
   const urls = [];
   for (let i = 0; i < clips.length; i++) {
     const prompt = `${clips[i].escena}\n\nShe looks at the camera and speaks directly in clear neutral Latin American Spanish, with natural lip-sync and authentic energy, saying exactly: "${clips[i].dialogo}"\n\n${look}`;
