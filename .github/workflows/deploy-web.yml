@@ -1,11 +1,13 @@
 name: Deploy Web (condorai.cl)
 
-# Publica apps/web en GitHub Pages en cada push a main que toque la web.
+# Construye apps/web-v2 (Vite) y lo publica en GitHub Pages en cada push a
+# main que toque la web. La SPA usa un 404.html = index.html para que las
+# rutas del cliente (react-router) funcionen al refrescar.
 on:
   push:
     branches: [main]
     paths:
-      - 'apps/web/**'
+      - 'apps/web-v2/**'
       - '.github/workflows/deploy-web.yml'
   workflow_dispatch:
 
@@ -25,13 +27,35 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    defaults:
+      run:
+        working-directory: apps/web-v2
     steps:
       - uses: actions/checkout@v4
+
+      - name: Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: apps/web-v2/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Build (Vite)
+        run: npm run build
+
+      - name: Fallback SPA (404 = index)
+        run: cp dist/index.html dist/404.html
+
       - uses: actions/configure-pages@v5
-      - name: Subir el sitio (apps/web)
+
+      - name: Subir el sitio (apps/web-v2/dist)
         uses: actions/upload-pages-artifact@v3
         with:
-          path: apps/web
+          path: apps/web-v2/dist
+
       - name: Desplegar a Pages
         id: deployment
         uses: actions/deploy-pages@v4
