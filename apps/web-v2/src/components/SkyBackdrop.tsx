@@ -94,10 +94,17 @@ export default function SkyBackdrop() {
         ref={skyRef}
         style={{ ...layer, backgroundImage: "url(/assets/sky/cielo-andino.jpg)", opacity: 1 }}
       />
-      {/* foto espacio (altitud alta) */}
+      {/* foto espacio (altitud alta) — blur suave para legibilidad nocturna.
+          El scale leve evita que el desenfoque deje bordes transparentes. */}
       <div
         ref={spaceRef}
-        style={{ ...layer, backgroundImage: "url(/assets/sky/espacio.jpg)", opacity: 0 }}
+        style={{
+          ...layer,
+          backgroundImage: "url(/assets/sky/espacio.jpg)",
+          opacity: 0,
+          filter: "blur(3px)",
+          transform: "scale(1.06)",
+        }}
       />
     </div>
   );
