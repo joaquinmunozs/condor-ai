@@ -1,0 +1,159 @@
+/* =========================================================
+   condor.ai v2 — Dirección de arte "Altitud / Cielo Andino"
+   Tokens + reset global. Toda decisión visual vive aquí.
+   ========================================================= */
+:root {
+  /* Color — base que asciende a noche */
+  --base: #f6f9fe;
+  --base-2: #ecf2fc;
+  --niebla: #c9d6f0;
+  --twilight: #10183a;
+  --night: #0b1437;
+  --night-2: #070b1f;
+
+  /* Marca */
+  --azul: #2747ff;
+  --vio: #7a5bff;
+  --rojo: #ff3b4e;
+  --rojo-ink: #e5293c; /* CTA fill con texto blanco — contraste AA en texto grande */
+  --grad: linear-gradient(115deg, #2747ff 0%, #7a5bff 48%, #ff3b4e 100%);
+  --grad-soft: linear-gradient(115deg, #2747ff22 0%, #7a5bff1a 48%, #ff3b4e1a 100%);
+
+  /* Tinta (texto sobre claro) */
+  --ink: #0b1437;
+  --ink-2: #46527a;
+  --ink-3: #8893b5;
+
+  /* Texto sobre noche */
+  --on-night: #eaf0ff;
+  --on-night-2: #9fb0d8;
+  --on-night-3: #5d6a99;
+
+  /* Forma */
+  --r-sm: 12px;
+  --r: 20px;
+  --r-lg: 28px;
+  --max: 1180px;
+  --gutter: clamp(20px, 5vw, 48px);
+
+  /* Sombra (luz alta, difusa) */
+  --sombra: 0 30px 80px -34px rgba(11, 20, 55, 0.28);
+  --sombra-s: 0 14px 40px -20px rgba(11, 20, 55, 0.22);
+
+  /* Tipografía */
+  --display: "Clash Display", "General Sans", system-ui, sans-serif;
+  --body: "General Sans", system-ui, sans-serif;
+  --mono: "Space Mono", ui-monospace, monospace;
+
+  /* Escala modular ratio 1.333 (cuarta justa) */
+  --t--1: 0.75rem;
+  --t-0: 1rem;
+  --t-1: 1.333rem;
+  --t-2: 1.777rem;
+  --t-3: 2.369rem;
+  --t-4: 3.157rem;
+  --t-5: 4.209rem;
+
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  color-scheme: light;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--body);
+  background: var(--base);
+  color: var(--ink);
+  line-height: 1.55;
+  overflow-x: hidden;
+  letter-spacing: -0.01em;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--display);
+  font-weight: 600;
+  line-height: 1.04;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+::selection {
+  background: var(--vio);
+  color: #fff;
+}
+
+/* Foco de teclado visible SIEMPRE (Fase 2/9) */
+:focus-visible {
+  outline: 2px solid var(--azul);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* Utilidades */
+.wrap {
+  width: 100%;
+  max-width: var(--max);
+  margin: 0 auto;
+  padding-inline: var(--gutter);
+}
+.grad-tx {
+  background: var(--grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.mono-label {
+  font-family: var(--mono);
+  font-size: var(--t--1);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* Respeto total a prefers-reduced-motion (Fase 2/8/9) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

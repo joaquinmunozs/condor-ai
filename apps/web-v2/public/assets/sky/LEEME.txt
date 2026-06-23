@@ -1,0 +1,12 @@
+Pon aquí las 2 fotos del fondo (transición por altura).
+
+Nombres EXACTOS (respeta minúsculas y extensión):
+
+  cielo-andino.jpg   ← foto del cielo andino (parte baja / altitud 0)
+  espacio.jpg        ← foto del espacio (parte alta / máxima altitud)
+
+Notas:
+- Formato ideal: JPG o WEBP, orientación vertical/cuadrada, mínimo 2000px de alto.
+- Si tus archivos son .webp, renómbralos a cielo-andino.webp / espacio.webp
+  y avísame para ajustar la referencia (por defecto el código busca .jpg).
+- Mientras no existan, el fondo usa el degradado azul→noche como respaldo.
