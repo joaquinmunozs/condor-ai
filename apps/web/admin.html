@@ -677,11 +677,12 @@
       // Sandra avisa en el grupo de Telegram (no bloquea si falla)
       try {
         const { data:{session} } = await sb.auth.getSession();
-        const invitados = adminsList.filter(a => participantes.has(a.id)).map(a => a.nombre);
+        const invitadosObj = adminsList.filter(a => participantes.has(a.id)).map(a => ({ nombre: a.nombre, email: a.email }));
+        const invitados = invitadosObj.map(a => a.nombre); // compat: el aviso de Telegram usa nombres
         fetch(FUNCTIONS + "/reunion-notificar", {
           method: "POST",
           headers: { "Content-Type":"application/json", "Authorization":"Bearer "+session.access_token, "apikey":ANON_KEY },
-          body: JSON.stringify({ titulo, cliente, fecha_hora, duracion_min, descripcion, invitados }),
+          body: JSON.stringify({ titulo, cliente, fecha_hora, duracion_min, descripcion, invitados, invitados_email: invitadosObj }),
         }).catch(()=>{});
       } catch(e) {}
 
