@@ -1,11 +1,13 @@
-// condor.ai · "Barbara Reels" — videos para redes (GitHub Actions)
-// TIPO=trailer  → Reel 12s estilo trailer startup ofreciendo servicios (web, videos, automatización IA).
-// TIPO=ugc      → Reel ~24s estilo creador hablando de lo poderosa que es la IA para negocios.
-// Video con HIGGSFIELD (seedance1_5). Memoria anti-repetición compartida (content-log.json).
-// Manda a Telegram para revisar antes de subir.
+// condor.ai · "Barbara Reels" — videos verticales 9:16 para redes (GitHub Actions)
+// MARTES (TIPO=ugc):     UGC ~30s. La vocera fija (avatar.png) HABLA en español neutro sobre
+//                        lo importante de implementar IA + CTA "Contáctanos". Motor: Veo 3.1 (voz nativa).
+// JUEVES (TIPO=trailer): Trailer cinematográfico ~30s de una INDUSTRIA distinta cada semana
+//                        (rota rubros desde la memoria), potenciada por IA. Motor: Seedance 2.0.
+// Memoria anti-repetición compartida con los carruseles (services/barbara/content-log.json).
+// Une clips con ffmpeg y manda a Telegram para revisar antes de subir.
 //
 // Secrets: ANTHROPIC_API_KEY, HIGGSFIELD_ACCESS_TOKEN/REFRESH_TOKEN, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
-// Variables: TIPO (trailer|ugc|test) · RETRY=1
+// Variables: TIPO (ugc|trailer|test) · RETRY=1 (rehacer cuando el equipo rechaza) · INDUSTRIA (forzar rubro)
 
 import { execSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
@@ -14,30 +16,22 @@ const AK = process.env.ANTHROPIC_API_KEY;
 const TG = process.env.TELEGRAM_BOT_TOKEN;
 const CHAT = process.env.TELEGRAM_CHAT_ID;
 const isRetry = process.env.RETRY === "1";
-const LOG = "barbara/content-log.json";
+const LOG = "services/barbara/content-log.json";
+const AVATAR = "services/barbara/avatar.png";
 
 let TIPO = (process.env.TIPO || "").trim().toLowerCase();
 const isTest = TIPO === "test" || process.env.TEST === "1";
-if (!["trailer", "ugc"].includes(TIPO)) {
-  // por día: martes=trailer, jueves=ugc
-  TIPO = new Date().getUTCDay() === 4 ? "ugc" : "trailer";
+if (!["ugc", "trailer"].includes(TIPO)) {
+  // por día: martes(2)=ugc, jueves(4)=trailer
+  TIPO = new Date().getUTCDay() === 4 ? "trailer" : "ugc";
 }
 
-const TEMAS = {
-  trailer: {
-    titulo: "🎬 Reel — Trailer condor.ai",
-    duracion: 12, nClips: 1,
-    instruccion: "Reel de 12s estilo TRAILER de startup tecnológica, épico y moderno, presentando los servicios de condor.ai (páginas web con IA, videos 4K, automatizaciones y agentes IA). Energía aspiracional, ritmo rápido.",
-    look: "Cinematic startup trailer, dark premium aesthetic with electric blue 2747ff / violet 7a5bff / coral red ff3b4e gradient accents, sleek 3D motion graphics, fast dynamic camera, glossy futuristic, high-end tech brand vibe. NO logos, NO text watermark.",
-  },
-  ugc: {
-    titulo: "🎤 Reel — UGC sobre IA",
-    duracion: 24, nClips: 2,
-    instruccion: "Reel ~24s estilo UGC (creador de contenido auténtico) hablando de lo PODEROSA que es la IA para hacer crecer un negocio hoy. Cercano, real, inspirador, que enganche en los primeros 3 segundos.",
-    look: "Authentic UGC vertical video, a real-looking person/scene in a natural modern setting (home office, cafe, phone-recorded feel), warm natural lighting, relatable not corporate, subtle motion. NO logos, NO watermark.",
-  },
-};
-const tema = TEMAS[TIPO];
+// Pool de industrias para el trailer del jueves (rota para cubrir todos los rubros)
+const INDUSTRIAS = [
+  "restaurante", "retail / tienda", "clínica dental", "inmobiliaria", "taller mecánico",
+  "logística y transporte", "gimnasio", "estudio jurídico", "hotel", "e-commerce",
+  "constructora", "agro", "peluquería / barbería", "óptica", "veterinaria", "farmacia",
+];
 
 async function tg(method, payload, isForm = false) {
   const opt = { method: "POST" };
@@ -58,21 +52,11 @@ const textOf = (d) => (d.content || []).filter((b) => b.type === "text").map((b)
 const leerLog = () => { try { return JSON.parse(readFileSync(LOG, "utf8")); } catch { return []; } };
 function guardarEnLog(entry) { const log = leerLog(); log.push(entry); writeFileSync(LOG, JSON.stringify(log.slice(-100), null, 2) + "\n"); }
 
-const schema = {
-  type: "object", additionalProperties: false,
-  properties: {
-    angulo: { type: "string", description: "Idea/ángulo único de este reel en una frase (para no repetir)." },
-    clips: { type: "array", description: "Una entrada por clip de 12s (en orden). Cada prompt en inglés, art-directed, con el look del día.", items: { type: "string" } },
-    caption: { type: "string", description: "Caption para Instagram/TikTok con hook fuerte + valor + invita a seguir/escribir + 5-8 hashtags." },
-    texto_en_pantalla: { type: "string", description: "El texto corto que iría sobreimpreso en el reel (hook), en español." },
-  },
-  required: ["angulo", "clips", "caption", "texto_en_pantalla"],
-};
-
-function genVideo(prompt, idx, dur) {
+// ---- Higgsfield: generar un clip y devolver su URL ----
+function genVideo(model, prompt, dur, idx, extra = "") {
   const safe = prompt.replace(/"/g, "'").slice(0, 1500);
   const out = execSync(
-    `higgsfield generate create seedance1_5 --prompt "${safe}" --aspect_ratio 9:16 --duration ${dur} --resolution 720p --wait --wait-timeout 14m`,
+    `higgsfield generate create ${model} --prompt "${safe}" --aspect_ratio 9:16 --duration ${dur} ${extra} --wait --wait-timeout 14m`,
     { encoding: "utf8", timeout: 15 * 60 * 1000, stdio: ["ignore", "pipe", "pipe"] }
   );
   const url = (out.trim().split("\n").pop() || "").trim();
@@ -80,50 +64,133 @@ function genVideo(prompt, idx, dur) {
   return url;
 }
 
-async function main() {
-  console.log("Reels |", TIPO, "| retry:", isRetry);
-  if (isTest) { const j = await (await tg("sendMessage", { chat_id: CHAT, text: "✅ Barbara Reels: conexión OK" })).json(); if (!j.ok) throw new Error("TG: " + j.description); return; }
+// ---- Unir N clips en un solo vertical 9:16 (re-encode para que el concat sea robusto) ----
+async function unirClips(urls) {
+  if (urls.length === 1) return Buffer.from(await (await fetch(urls[0])).arrayBuffer());
+  for (let i = 0; i < urls.length; i++) {
+    writeFileSync(`/tmp/c${i}.mp4`, Buffer.from(await (await fetch(urls[i])).arrayBuffer()));
+  }
+  const inputs = urls.map((_, i) => `-i /tmp/c${i}.mp4`).join(" ");
+  const parts = urls.map((_, i) => `[${i}:v]scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,setsar=1[v${i}];`).join("");
+  const concat = urls.map((_, i) => `[v${i}][${i}:a]`).join("") + `concat=n=${urls.length}:v=1:a=1[v][a]`;
+  execSync(
+    `ffmpeg -y ${inputs} -filter_complex "${parts}${concat}" -map "[v]" -map "[a]" -c:v libx264 -pix_fmt yuv420p -c:a aac /tmp/final.mp4`,
+    { stdio: "ignore" }
+  );
+  return readFileSync("/tmp/final.mp4");
+}
 
+// ================= MARTES: UGC que habla (Veo 3.1) =================
+const schemaUGC = {
+  type: "object", additionalProperties: false,
+  properties: {
+    angulo: { type: "string", description: "Ángulo/idea ÚNICO de hoy en una frase (para no repetir)." },
+    clips: {
+      type: "array", description: "Exactamente 4 tomas de 8s, en orden. Toma 1 = HOOK (engancha en los primeros 3s). Toma 4 = CIERRE con CTA.",
+      items: {
+        type: "object", additionalProperties: false,
+        properties: {
+          escena: { type: "string", description: "Descripción EN INGLÉS de la toma (encuadre, gesto, acción de la mujer). Varía encuadres entre tomas (close-up, plano medio) para que los cortes se sientan naturales." },
+          dialogo: { type: "string", description: "La frase EXACTA en español neutro latinoamericano que dice en esta toma (1 frase corta, ~8s al hablar). La toma 4 termina invitando a contactar a condor.ai para implementar IA en su negocio." },
+        },
+        required: ["escena", "dialogo"],
+      },
+    },
+    texto_en_pantalla: { type: "string", description: "Hook corto en español para sobreimprimir en el reel." },
+    caption: { type: "string", description: "Caption para Instagram/TikTok con hook + valor + invita a escribir + 5-8 hashtags (IA/negocios/Perú/Chile)." },
+  },
+  required: ["angulo", "clips", "texto_en_pantalla", "caption"],
+};
+
+async function hacerUGC() {
   const recientes = leerLog().slice(-15).map(e => `- [${e.fecha} ${e.tipo}] ${e.angulo}`).join("\n") || "(sin historial)";
   const extra = isRetry ? "\n\n⚠️ REINTENTO: el reel anterior fue rechazado. Haz uno claramente mejor y distinto." : "";
-
   const dir = await claude({
-    model: "claude-sonnet-4-6", max_tokens: 2000,
-    system: `Eres Barbara, directora creativa de condor.ai. Diseñas reels verticales 9:16 de alto impacto. Sigues el look del día. NUNCA repites ángulos ni protagonistas de las piezas recientes (te las paso). Innova siempre. Responde SOLO con el JSON. El reel debe tener ${tema.nClips} clip(s) de 12s.`,
-    output_config: { format: { type: "json_schema", schema } },
-    messages: [{ role: "user", content: `Reel de hoy (${TIPO}): ${tema.instruccion}\n\nLOOK OBLIGATORIO:\n${tema.look}\n\nPIEZAS RECIENTES (no repitas):\n${recientes}${extra}\n\nDevuelve ${tema.nClips} prompt(s) de clip en orden.` }],
+    model: "claude-sonnet-4-6", max_tokens: 2500,
+    system: `Eres Barbara, directora creativa de condor.ai (agencia que implementa IA en negocios de Perú y Chile). Diriges un reel UGC vertical 9:16 de una vocera que habla a cámara en ESPAÑOL NEUTRO sobre lo importante que es implementar IA en tu negocio HOY. Tono cercano, real, energía de creadora auténtica, hook potente en los primeros 3 segundos y mucha retención. NUNCA repites ángulos ni frases de las piezas recientes (te las paso). Responde SOLO con el JSON. Exactamente 4 tomas de ~8s.`,
+    output_config: { format: { type: "json_schema", schema: schemaUGC } },
+    messages: [{ role: "user", content: `Crea el guion del reel UGC de hoy.\n\nPIEZAS RECIENTES (no repitas estos ángulos):\n${recientes}${extra}\n\nDevuelve 4 tomas (escena + diálogo en español neutro). Toma 1 hook, toma 4 cierre con CTA "contáctanos y vemos cómo implementarla en tu negocio".` }],
   });
   const plan = JSON.parse(textOf(dir));
-  const clips = (plan.clips || []).slice(0, tema.nClips);
+  const clips = (plan.clips || []).slice(0, 4);
 
-  // Generar clips y unir si son varios
+  const look = "Authentic UGC vertical video, the SAME woman from the reference image (keep her identity, face and outfit consistent), modern bright home office, warm natural lighting, phone-recorded feel, subtle natural motion. NO logos, NO watermark, NO on-screen text or UI.";
   const urls = [];
-  for (let i = 0; i < clips.length; i++) urls.push(genVideo(clips[i] + "\n\n" + tema.look, i, 12));
-
-  let videoBuf;
-  if (urls.length === 1) {
-    videoBuf = Buffer.from(await (await fetch(urls[0])).arrayBuffer());
-  } else {
-    // descargar y concatenar con ffmpeg
-    const { writeFileSync: wf } = await import("node:fs");
-    for (let i = 0; i < urls.length; i++) wf(`/tmp/c${i}.mp4`, Buffer.from(await (await fetch(urls[i])).arrayBuffer()));
-    const list = urls.map((_, i) => `file '/tmp/c${i}.mp4'`).join("\n");
-    wf("/tmp/list.txt", list);
-    execSync(`ffmpeg -y -f concat -safe 0 -i /tmp/list.txt -c copy /tmp/final.mp4`, { stdio: "ignore" });
-    videoBuf = readFileSync("/tmp/final.mp4");
+  for (let i = 0; i < clips.length; i++) {
+    const prompt = `${clips[i].escena}\n\nShe looks at the camera and speaks directly in clear neutral Latin American Spanish, with natural lip-sync and authentic energy, saying exactly: "${clips[i].dialogo}"\n\n${look}`;
+    urls.push(genVideo("veo3_1", prompt, 8, i, `--start-image ${AVATAR}`));
   }
+  if (!urls.length) throw new Error("No se generó ningún clip UGC");
+  const videoBuf = await unirClips(urls);
+  return { plan, videoBuf, titulo: "🎤 Reel UGC — implementa IA en tu negocio", tipoLog: "reel-ugc", extraLog: {} };
+}
+
+// ================= JUEVES: trailer cinematográfico por industria (Seedance 2.0) =================
+const schemaTrailer = {
+  type: "object", additionalProperties: false,
+  properties: {
+    angulo: { type: "string", description: "Ángulo/idea ÚNICO de este trailer en una frase (para no repetir)." },
+    clips: { type: "array", description: "Exactamente 2 prompts EN INGLÉS de 15s, en orden, estilo trailer cinematográfico de la industria potenciada por IA. Hook visual fuerte en el primer segundo.", items: { type: "string" } },
+    texto_en_pantalla: { type: "string", description: "Frase aspiracional corta en español para sobreimprimir." },
+    caption: { type: "string", description: "Caption para Instagram/TikTok con hook + valor para esa industria + invita a escribir + 5-8 hashtags." },
+  },
+  required: ["angulo", "clips", "texto_en_pantalla", "caption"],
+};
+
+async function hacerTrailer() {
+  const log = leerLog();
+  const recientes = log.slice(-15).map(e => `- [${e.fecha} ${e.tipo}] ${e.angulo}${e.industria ? " · industria: " + e.industria : ""}`).join("\n") || "(sin historial)";
+  // elegir industria menos usada recientemente (o forzada por env)
+  const usadas = log.slice(-10).map(e => e.industria).filter(Boolean);
+  const disponibles = INDUSTRIAS.filter(x => !usadas.includes(x));
+  const pool = disponibles.length ? disponibles : INDUSTRIAS;
+  const industria = (process.env.INDUSTRIA || "").trim() || pool[Math.floor(Math.random() * pool.length)];
+
+  const extra = isRetry ? "\n\n⚠️ REINTENTO: el trailer anterior fue rechazado. Haz uno claramente mejor y distinto." : "";
+  const look = "Cinematic premium trailer, vertical 9:16, dramatic camera movement, glossy modern color grade, epic uplifting score energy, futuristic but grounded, real-looking people and spaces of the industry transformed by AI, holographic data and subtle AI interface accents. NO logos, NO watermark, NO real brand names.";
+  const dir = await claude({
+    model: "claude-sonnet-4-6", max_tokens: 2000,
+    system: `Eres Barbara, directora creativa de condor.ai. Diriges un REEL TRAILER cinematográfico vertical 9:16 (~30s, 2 clips de 15s) que muestra una industria concreta transformada por la IA, con máxima técnica de hook y retención. Es distinto y NO copia el carrusel de industrias del miércoles: aquí es cine, emoción y movimiento, no infografía. NUNCA repites ángulos de las piezas recientes (te las paso). Responde SOLO con el JSON.`,
+    output_config: { format: { type: "json_schema", schema: schemaTrailer } },
+    messages: [{ role: "user", content: `Industria de hoy: ${industria}.\n\nLOOK OBLIGATORIO:\n${look}\n\nPIEZAS RECIENTES (no repitas):\n${recientes}${extra}\n\nDevuelve 2 prompts de clip (inglés, 15s c/u) que cuenten un mini-trailer de cómo la IA transforma un ${industria}.` }],
+  });
+  const plan = JSON.parse(textOf(dir));
+  const clips = (plan.clips || []).slice(0, 2);
+
+  const urls = [];
+  for (let i = 0; i < clips.length; i++) urls.push(genVideo("seedance_2_0", clips[i] + "\n\n" + look, 15, i, "--resolution 720p"));
+  if (!urls.length) throw new Error("No se generó ningún clip de trailer");
+  const videoBuf = await unirClips(urls);
+  return { plan, videoBuf, titulo: `🎬 Reel Trailer — IA en ${industria}`, tipoLog: "reel-trailer", extraLog: { industria } };
+}
+
+async function main() {
+  console.log("Reels |", TIPO, "| retry:", isRetry, "| TG:", !!TG, "| ANTHROPIC:", !!AK);
+  if (isTest) {
+    const j = await (await tg("sendMessage", { chat_id: CHAT, text: "✅ Barbara Reels: conexión OK" })).json();
+    if (!j.ok) throw new Error("TG: " + j.description); return;
+  }
+
+  // Candado anti-doble-publicación (salvo RETRY): si ya se publicó este tipo hoy, no regenerar
+  if (!isRetry) {
+    const hoyISO = new Date().toISOString().slice(0, 10);
+    const yaHoy = leerLog().some(e => e.fecha === hoyISO && e.tipo === "reel-" + TIPO);
+    if (yaHoy) { console.log("Reel", TIPO, "ya publicado hoy (" + hoyISO + "). Usa RETRY=1 para rehacer."); return; }
+  }
+
+  const { plan, videoBuf, titulo, tipoLog, extraLog } = TIPO === "trailer" ? await hacerTrailer() : await hacerUGC();
 
   // Enviar a Telegram
   const fd = new FormData();
   fd.append("chat_id", CHAT);
-  fd.append("caption", `${tema.titulo}\n\n💬 Texto en pantalla: ${plan.texto_en_pantalla || ""}`);
+  fd.append("caption", `${titulo}\n\n💬 Texto en pantalla: ${plan.texto_en_pantalla || ""}`);
   fd.append("video", new Blob([videoBuf], { type: "video/mp4" }), "reel.mp4");
   const j = await (await tg("sendVideo", fd, true)).json();
   if (!j.ok) throw new Error("Telegram sendVideo: " + (j.description || ""));
-  await tg("sendMessage", { chat_id: CHAT, text: `🎬 *${tema.titulo}* — listo para revisar.\n\n📝 *Caption:*\n${plan.caption || ""}\n\n_Si quedó mal, responde "Denuevo barbara" en el grupo._`, parse_mode: "Markdown" });
+  await tg("sendMessage", { chat_id: CHAT, text: `🎬 *${titulo}* — listo para revisar.\n\n📝 *Caption:*\n${plan.caption || ""}\n\n_Si quedó mal, responde "Denuevo barbara" en el grupo._`, parse_mode: "Markdown" });
 
-  guardarEnLog({ fecha: new Date().toISOString().slice(0, 10), tipo: "reel-" + TIPO, angulo: plan.angulo || "" });
-  console.log("OK reel", TIPO, "| ángulo:", plan.angulo);
+  guardarEnLog({ fecha: new Date().toISOString().slice(0, 10), tipo: tipoLog, angulo: plan.angulo || "", ...extraLog });
+  console.log("OK reel", TIPO, "| ángulo:", plan.angulo, extraLog.industria ? "| industria: " + extraLog.industria : "");
 }
 
 main().catch(async (e) => {

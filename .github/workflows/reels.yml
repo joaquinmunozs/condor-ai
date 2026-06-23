@@ -2,12 +2,16 @@ name: Barbara Reels - videos RRSS
 
 on:
   schedule:
-    # Mar(2) 09:00 Perú = trailer · Jue(4) 09:00 Perú = ugc  (14:00 UTC)
+    # Mar(2) 09:00 Perú = ugc (vocera habla, Veo 3.1) · Jue(4) 09:00 Perú = trailer industria (Seedance 2.0)  (14:00 UTC)
       - cron: '0 14 * * 2,4'
   workflow_dispatch:
     inputs:
       tipo:
-        description: 'trailer | ugc | test  (vacío = según el día)'
+        description: 'ugc | trailer | test  (vacío = según el día)'
+        required: false
+        default: ''
+      industria:
+        description: 'forzar industria del trailer (opcional, ej: restaurante)'
         required: false
         default: ''
       retry:
@@ -44,6 +48,7 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           TIPO: ${{ github.event.inputs.tipo }}
           RETRY: ${{ github.event.inputs.retry }}
+          INDUSTRIA: ${{ github.event.inputs.industria }}
       - name: Guardar memoria
         run: |
           git config user.name "barbara-bot"
