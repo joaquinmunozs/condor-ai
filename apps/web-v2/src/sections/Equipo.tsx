@@ -1,11 +1,55 @@
-const EQUIPO = [
-  { foto: "/assets/joaquin.jpg", nombre: "Joaquín Muñoz", rol: "Cofundador & CEO" },
-  { foto: "/assets/alejandro.jpg", nombre: "Alejandro Tobar", rol: "Cofundador & Backend" },
-  { foto: "/assets/maximiliano.jpg", nombre: "Maximiliano Pino", rol: "Cofundador & Desarrollo" },
-  { foto: null, ini: "S", nombre: "Samuel Ospitia", rol: "Arquitecto de Software" },
+import { useEffect, useState } from "react";
+
+type Miembro = {
+  foto: string | null;
+  ini?: string;
+  nombre: string;
+  rol: string;
+  bio: string;
+};
+
+const EQUIPO: Miembro[] = [
+  {
+    foto: "/assets/joaquin.jpg",
+    nombre: "Joaquín Muñoz",
+    rol: "Cofundador & CEO",
+    bio: "Lidera la estrategia y la relación con los clientes. Define hacia dónde va condor.ai y se asegura de que cada proyecto entregue resultados reales para el negocio.",
+  },
+  {
+    foto: "/assets/alejandro.jpg",
+    nombre: "Alejandro Tobar",
+    rol: "Cofundador & Backend",
+    bio: "Construye el motor invisible de todo: APIs, bases de datos e integraciones. Hace que la plataforma funcione rápido, segura y sin caídas.",
+  },
+  {
+    foto: "/assets/maximiliano.jpg",
+    nombre: "Maximiliano Pino",
+    rol: "Cofundador · Ingeniero Comercial",
+    bio: "Ingeniero comercial que trabaja en varias áreas: desarrollo de páginas y webs, creación de contenido comercial y contenido para redes sociales. Siempre está verificando que todo cumpla los requisitos de calidad — una persona exigente que está presente en todas las áreas de la empresa.",
+  },
+  {
+    foto: null,
+    ini: "S",
+    nombre: "Samuel Ospitia",
+    rol: "Arquitecto de Software",
+    bio: "Diseña la arquitectura de los sistemas: define cómo se estructura todo para que escale sin romperse a medida que crecemos.",
+  },
 ];
 
 export default function Equipo() {
+  const [sel, setSel] = useState<number | null>(null);
+  const activo = sel !== null ? EQUIPO[sel] : null;
+
+  useEffect(() => {
+    document.body.style.overflow = activo ? "hidden" : "";
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setSel(null);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
+  }, [activo]);
+
   return (
     <section className="section equipo" id="nosotros">
       <div className="wrap">
@@ -16,11 +60,22 @@ export default function Equipo() {
           </h2>
           <p className="equipo-lead reveal" style={{ marginBottom: 0 }}>
             Un equipo cercano que habla tu idioma — sin call centers ni vueltas.
+            <br />
+            <span className="mono-label" style={{ opacity: 0.7 }}>
+              Toca a cada uno para ver qué hace
+            </span>
           </p>
         </div>
         <div className="equipo-grid">
           {EQUIPO.map((m, i) => (
-            <article className="miembro reveal" key={m.nombre} style={{ transitionDelay: `${i * 0.07}s` }}>
+            <button
+              type="button"
+              className="miembro reveal"
+              key={m.nombre}
+              style={{ transitionDelay: `${i * 0.07}s` }}
+              onClick={() => setSel(i)}
+              aria-haspopup="dialog"
+            >
               {m.foto ? (
                 <img className="miembro-foto" src={m.foto} alt={m.nombre} loading="lazy" />
               ) : (
@@ -28,13 +83,35 @@ export default function Equipo() {
               )}
               <h3>{m.nombre}</h3>
               <p className="mono-label">{m.rol}</p>
-            </article>
+              <span className="miembro-mas">Ver más +</span>
+            </button>
           ))}
         </div>
         <div className="equipo-cta reveal">
           <a className="btn-ghost" href="/nosotros/">Conoce al equipo →</a>
         </div>
       </div>
+
+      {/* Modal de bio */}
+      <div
+        className={activo ? "bio-ov on" : "bio-ov"}
+        onClick={() => setSel(null)}
+      />
+      {activo && (
+        <div className="bio-modal glass" role="dialog" aria-modal="true" aria-label={activo.nombre}>
+          <button className="bio-close" aria-label="Cerrar" onClick={() => setSel(null)}>
+            ×
+          </button>
+          {activo.foto ? (
+            <img className="bio-foto" src={activo.foto} alt={activo.nombre} />
+          ) : (
+            <span className="bio-foto miembro-ini" aria-hidden="true">{activo.ini}</span>
+          )}
+          <h3 className="bio-nombre">{activo.nombre}</h3>
+          <p className="mono-label bio-rol">{activo.rol}</p>
+          <p className="bio-texto">{activo.bio}</p>
+        </div>
+      )}
     </section>
   );
 }
