@@ -12,7 +12,7 @@ const LINKS: NavItem[] = [
   { label: "Servicios", href: "#servicios", type: "hash" },
   { label: "Portafolio", href: "#portafolio", type: "hash" },
   { label: "Blog", href: "#blog", type: "hash" },
-  { label: "Nosotros", href: "#nosotros", type: "hash" },
+  { label: "Nosotros", href: "/nosotros/", type: "ext" },
   { label: "Planes", href: "/planes", type: "route" },
   { label: "Acceso clientes", href: "/portal.html", type: "ext" },
 ];

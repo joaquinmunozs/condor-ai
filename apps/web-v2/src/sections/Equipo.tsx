@@ -24,8 +24,8 @@ const EQUIPO: Miembro[] = [
   {
     foto: "/assets/maximiliano.jpg",
     nombre: "Maximiliano Pino",
-    rol: "Cofundador · Ingeniero Comercial",
-    bio: "Ingeniero comercial que trabaja en varias áreas: desarrollo de páginas y webs, creación de contenido comercial y contenido para redes sociales. Siempre está verificando que todo cumpla los requisitos de calidad — una persona exigente que está presente en todas las áreas de la empresa.",
+    rol: "Cofundador · Ing. Comercial y Desarrollo",
+    bio: "Ingeniero comercial presente en todas las áreas de la empresa. Lidera el desarrollo front-end de las webs, es el técnico detrás del CRM y supervisa la calidad de cada entrega con ojo exigente: nada sale si no cumple el estándar. Combina la mirada comercial con la ejecución técnica que la hace realidad.",
   },
   {
     foto: null,

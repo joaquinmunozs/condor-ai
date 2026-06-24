@@ -3,43 +3,157 @@
 <head>
   <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Portal de clientes · condor.ai</title>
-  <meta name="theme-color" content="#ffffff" />
+  <meta name="theme-color" content="#05081a" />
   <link rel="icon" type="image/png" href="/assets/favicon.png" /><link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
-  <link rel="stylesheet" href="/assets/styles.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    .portal-wrap{max-width:680px;margin:0 auto;padding:130px 22px 80px}
-    .pcard{background:var(--bg-2);border:1px solid var(--linea);border-radius:var(--r);padding:34px;box-shadow:var(--sombra-s)}
-    .badge{display:inline-block;font-size:.78rem;font-weight:700;padding:5px 12px;border-radius:999px}
-    .b-ok{background:rgba(10,125,79,.12);color:#0a7d4f}.b-pend{background:rgba(255,59,78,.1);color:#c0263a}.b-aldia{background:rgba(39,71,255,.1);color:var(--azul)}
-    .frow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 0;border-bottom:1px solid var(--linea)}
-    .frow:last-child{border:none}.frow b{font-weight:600}.frow span{color:var(--tx-2)}
-    .pinput{width:100%;border:1px solid var(--linea);border-radius:14px;padding:14px 16px;font-family:var(--sf);font-size:1rem;margin:14px 0}
-    .pinput:focus{outline:none;border-color:var(--azul)}
-    .muted{color:var(--tx-2);font-size:.9rem}
-    .topbar{position:fixed;top:0;left:0;right:0;background:rgba(255,255,255,.8);backdrop-filter:blur(20px);border-bottom:1px solid var(--linea);z-index:50}
-    .topbar-in{max-width:680px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:14px 22px}
-    .topbar img{height:24px}
-    .seg-pay{display:flex;gap:14px;align-items:flex-start;background:rgba(10,125,79,.07);border:1px solid rgba(10,125,79,.18);border-radius:14px;padding:14px 16px}
-    .seg-lock{font-size:1.35rem;line-height:1.3}
-    .seg-pay b{display:block;color:#0a7d4f;margin-bottom:2px}
-    .seg-pay span{color:var(--tx-2);font-size:.9rem}
-    .trust-row{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;justify-content:center;margin-top:16px;color:var(--tx-2);font-size:.8rem}
-    .trust-row b{font-weight:600;color:var(--tx)}
-    .seg-login{display:flex;align-items:center;gap:7px;justify-content:center;color:var(--tx-2);font-size:.82rem;margin-top:16px}
+    /* =====================================================================
+       Portal de clientes · condor.ai — rediseño "liquid glass" (premium).
+       Página autónoma: NO depende de /assets/styles.css. Tokens propios,
+       tema noche, sin emojis. Toda la lógica (IDs/clases) queda intacta.
+       ===================================================================== */
+    :root{
+      --bg:#05081a;
+      --ink:#eaf0ff; --ink-2:rgba(234,240,255,.62); --ink-3:rgba(234,240,255,.40);
+      --blue:#4f7cff; --indigo:#6b4bff;
+      --glass:rgba(255,255,255,.055); --glass-2:rgba(255,255,255,.09);
+      --bd:rgba(255,255,255,.13); --bd-2:rgba(255,255,255,.22);
+      --ok:#34d399; --warn:#fbbf24; --danger:#fb7185;
+      --r:22px; --r-lg:30px;
+      --sf:-apple-system,"SF Pro Display","SF Pro Text",BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+      --mono:"SF Mono",ui-monospace,"Cascadia Mono","Roboto Mono",Menlo,monospace;
+      --shadow:0 30px 80px -30px rgba(2,6,30,.85), 0 8px 30px -12px rgba(2,6,30,.6);
+      --ring:0 0 0 4px rgba(79,124,255,.22);
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0}
+    body{
+      font-family:var(--sf); color:var(--ink); background:var(--bg);
+      min-height:100vh; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+      position:relative; overflow-x:hidden;
+    }
+    /* Fondo: profundidad noche + aurora condor que deriva lento (firma) */
+    .bg{position:fixed; inset:0; z-index:-2; overflow:hidden;
+      background:
+        radial-gradient(120% 80% at 50% -20%, #142b6e 0%, #0a1740 38%, #05081a 78%),
+        var(--bg);
+    }
+    .aura{position:absolute; border-radius:50%; filter:blur(90px); opacity:.5; will-change:transform}
+    .aura-1{width:46vw; height:46vw; left:-8vw; top:-6vw; background:radial-gradient(circle,#2747ff,transparent 65%); animation:drift1 26s ease-in-out infinite}
+    .aura-2{width:40vw; height:40vw; right:-10vw; top:18vh; background:radial-gradient(circle,#6b4bff,transparent 65%); opacity:.4; animation:drift2 32s ease-in-out infinite}
+    .aura-3{width:38vw; height:38vw; left:24vw; bottom:-14vw; background:radial-gradient(circle,#0bb3ff,transparent 68%); opacity:.28; animation:drift1 30s ease-in-out infinite reverse}
+    .grain{position:fixed; inset:0; z-index:-1; pointer-events:none; opacity:.05; mix-blend-mode:overlay;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+    @keyframes drift1{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(4vw,3vh,0) scale(1.08)}}
+    @keyframes drift2{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(-3vw,-4vh,0) scale(1.1)}}
+
+    a{color:inherit}
+    .grad-tx{background:linear-gradient(120deg,#8aa6ff,#c4b4ff); -webkit-background-clip:text; background-clip:text; color:transparent}
+    .muted{color:var(--ink-2); font-size:.92rem; line-height:1.55}
+    .lnk{color:#9db4ff; text-decoration:none; font-weight:550; cursor:pointer; transition:color .2s}
+    .lnk:hover{color:#c4d2ff}
+
+    /* Topbar liquid glass */
+    .topbar{position:fixed; top:0; left:0; right:0; z-index:50;
+      background:rgba(10,16,38,.55); backdrop-filter:blur(22px) saturate(160%); -webkit-backdrop-filter:blur(22px) saturate(160%);
+      border-bottom:1px solid rgba(255,255,255,.08)}
+    .topbar-in{max-width:680px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; padding:15px 22px}
+    .topbar img{height:24px; filter:brightness(0) invert(1); opacity:.92}
+
+    .portal-wrap{max-width:680px; margin:0 auto; padding:128px 22px 80px}
+
+    h1{font-size:2.1rem; line-height:1.08; letter-spacing:-.02em; font-weight:680; margin:0 0 8px}
+
+    /* ---- Liquid glass card (firma visual) ---- */
+    .pcard{position:relative; overflow:hidden;
+      background:var(--glass); border:1px solid var(--bd); border-radius:var(--r-lg);
+      backdrop-filter:blur(40px) saturate(180%); -webkit-backdrop-filter:blur(40px) saturate(180%);
+      box-shadow:var(--shadow), inset 0 1px 0 rgba(255,255,255,.18), inset 0 0 0 1px rgba(255,255,255,.02);
+      padding:34px;}
+    /* Brillo especular fijo en la esquina superior */
+    .pcard::before{content:""; position:absolute; inset:0; pointer-events:none; border-radius:inherit;
+      background:linear-gradient(135deg, rgba(255,255,255,.16) 0%, rgba(255,255,255,.04) 22%, transparent 46%);}
+    /* Barrido de luz lento que recorre el vidrio (única animación compleja) */
+    .pcard::after{content:""; position:absolute; top:0; left:-60%; width:55%; height:100%; pointer-events:none;
+      background:linear-gradient(100deg, transparent, rgba(255,255,255,.10), transparent);
+      transform:skewX(-18deg); animation:sheen 7.5s ease-in-out infinite;}
+    @keyframes sheen{0%{left:-60%}38%,100%{left:130%}}
+    .pcard>*{position:relative; z-index:1}
+
+    .badge{display:inline-flex; align-items:center; gap:6px; font-size:.76rem; font-weight:650; letter-spacing:.01em; padding:5px 12px; border-radius:999px; border:1px solid transparent}
+    .b-ok{background:rgba(52,211,153,.14); color:#7ff0c8; border-color:rgba(52,211,153,.35)}
+    .b-aldia{background:rgba(79,124,255,.16); color:#aebfff; border-color:rgba(79,124,255,.4)}
+    .b-pend{background:rgba(251,113,133,.14); color:#ffb0bd; border-color:rgba(251,113,133,.38)}
+
+    .frow{display:flex; justify-content:space-between; align-items:center; gap:12px; padding:16px 0; border-bottom:1px solid rgba(255,255,255,.08)}
+    .frow:last-child{border:none}
+    .frow b{font-weight:580; color:var(--ink)}
+    .frow span{color:var(--ink-2)}
+
+    label.muted{display:block; margin:2px 0 7px; font-weight:520}
+    .pinput{width:100%; border:1px solid var(--bd); border-radius:14px; padding:14px 16px;
+      font-family:var(--sf); font-size:1rem; margin:0 0 16px; color:var(--ink);
+      background:rgba(255,255,255,.045); transition:border-color .2s, box-shadow .2s, background .2s}
+    .pinput::placeholder{color:var(--ink-3)}
+    .pinput:focus{outline:none; border-color:var(--blue); background:rgba(255,255,255,.07); box-shadow:var(--ring)}
+
+    /* Botones */
+    .btn{display:inline-flex; align-items:center; justify-content:center; gap:9px;
+      min-height:52px; padding:0 24px; border:none; border-radius:16px; cursor:pointer;
+      font-family:var(--sf); font-size:1rem; font-weight:600; letter-spacing:-.01em;
+      transition:transform .18s ease, box-shadow .25s ease, background .25s, opacity .2s; text-decoration:none}
+    .btn:active{transform:translateY(0) scale(.99)}
+    .btn:disabled{opacity:.55; cursor:default}
+    .btn-grad{position:relative; color:#fff; overflow:hidden;
+      background:linear-gradient(135deg,#3b6cff 0%,#6b4bff 100%);
+      box-shadow:0 10px 26px -10px rgba(79,124,255,.7), inset 0 1px 0 rgba(255,255,255,.3)}
+    .btn-grad:hover:not(:disabled){transform:translateY(-2px); box-shadow:0 16px 34px -10px rgba(79,124,255,.85), inset 0 1px 0 rgba(255,255,255,.35)}
+    .btn-soft{background:var(--glass-2); border:1px solid var(--bd); color:var(--ink);
+      backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px)}
+    .btn-soft:hover:not(:disabled){background:rgba(255,255,255,.14); transform:translateY(-2px)}
+    .btn-wsp{background:rgba(37,211,102,.13); border:1px solid rgba(37,211,102,.42); color:#bff7d3}
+    .btn-wsp:hover:not(:disabled){background:rgba(37,211,102,.2); transform:translateY(-2px)}
+
+    .icn{width:18px; height:18px; flex:none; stroke:currentColor; fill:none; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round}
+
+    /* Bloque "pago seguro" */
+    .seg-pay{display:flex; gap:14px; align-items:flex-start;
+      background:rgba(52,211,153,.07); border:1px solid rgba(52,211,153,.2); border-radius:16px; padding:15px 17px}
+    .seg-lock{flex:none; color:#7ff0c8; display:flex; align-items:center}
+    .seg-pay b{display:block; color:#9bf0d0; margin-bottom:3px; font-weight:600}
+    .seg-pay span{color:var(--ink-2); font-size:.9rem; line-height:1.5}
+    .trust-row{display:flex; flex-wrap:wrap; gap:7px 12px; align-items:center; justify-content:center; margin-top:16px; color:var(--ink-3); font-size:.8rem}
+    .trust-row b{font-weight:600; color:var(--ink-2)}
+    .seg-login{display:flex; align-items:center; gap:8px; justify-content:center; color:var(--ink-3); font-size:.82rem; margin-top:18px}
+    .seg-login svg{color:#9db4ff}
+
+    /* Spinner de carga (reemplaza "Cargando…") */
+    .loader{display:flex; flex-direction:column; align-items:center; gap:14px; padding:40px 0; color:var(--ink-3)}
+    .spinner{width:34px; height:34px; border-radius:50%; border:2.5px solid rgba(255,255,255,.14); border-top-color:var(--blue); animation:spin .8s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    @media (max-width:560px){
+      .portal-wrap{padding:108px 16px 64px} h1{font-size:1.8rem} .pcard{padding:26px}
+    }
+    @media (prefers-reduced-motion:reduce){
+      .aura,.pcard::after,.spinner{animation:none}
+    }
   </style>
 </head>
 <body>
+  <div class="bg"><div class="aura aura-1"></div><div class="aura aura-2"></div><div class="aura aura-3"></div></div>
+  <div class="grain"></div>
+
   <div class="topbar"><div class="topbar-in">
     <a href="/"><img src="/assets/logo.png" alt="condor.ai" /></a>
-    <a class="lnk" href="/">← Volver al sitio</a>
+    <a class="lnk" href="/">&larr; Volver al sitio</a>
   </div></div>
 
   <div class="portal-wrap">
     <!-- LOGIN -->
     <div id="login" style="display:none">
-      <h1 style="font-size:2rem;margin-bottom:8px">Portal de <span class="grad-tx">clientes</span></h1>
-      <p class="muted" style="margin-bottom:20px">Acceso exclusivo para clientes de condor.ai.</p>
+      <h1>Portal de <span class="grad-tx">clientes</span></h1>
+      <p class="muted" style="margin-bottom:22px">Acceso exclusivo para clientes de condor.ai.</p>
       <div class="pcard">
         <!-- Paso 1: correo + contraseña -->
         <div id="step-pass">
@@ -48,14 +162,14 @@
           <label class="muted">Contraseña</label>
           <input class="pinput" id="pass" type="password" placeholder="Tu contraseña" autocomplete="current-password" />
           <button class="btn btn-grad" style="width:100%" id="btnPass">Entrar</button>
-          <p class="muted" style="margin-top:14px;text-align:center"><a class="lnk" id="lnkCode" style="cursor:pointer">Entrar con código / Olvidé mi contraseña</a></p>
+          <p class="muted" style="margin-top:16px;text-align:center"><a class="lnk" id="lnkCode">Entrar con código / Olvidé mi contraseña</a></p>
         </div>
         <!-- Paso 2: código de 6 dígitos -->
         <div id="step-code" style="display:none">
-          <p class="muted">Te enviamos un código a <b id="codeEmail"></b>. Escríbelo aquí:</p>
-          <input class="pinput" id="code" type="text" inputmode="numeric" maxlength="8" placeholder="••••••••" style="letter-spacing:.35em;text-align:center;font-size:1.3rem" />
+          <p class="muted">Te enviamos un código a <b id="codeEmail" style="color:var(--ink)"></b>. Escríbelo aquí:</p>
+          <input class="pinput" id="code" type="text" inputmode="numeric" maxlength="8" placeholder="________" style="letter-spacing:.4em;text-align:center;font-size:1.3rem" />
           <button class="btn btn-grad" style="width:100%" id="btnCode">Verificar código</button>
-          <p class="muted" style="margin-top:14px;text-align:center"><a class="lnk" id="lnkBack" style="cursor:pointer">← Volver</a></p>
+          <p class="muted" style="margin-top:16px;text-align:center"><a class="lnk" id="lnkBack">&larr; Volver</a></p>
         </div>
         <!-- Paso 3: crear contraseña (primer ingreso) -->
         <div id="step-newpass" style="display:none">
@@ -64,21 +178,24 @@
           <input class="pinput" id="np2" type="password" placeholder="Repite la contraseña" autocomplete="new-password" />
           <button class="btn btn-grad" style="width:100%" id="btnNewPass">Guardar contraseña</button>
         </div>
-        <p class="muted" id="loginMsg" style="margin-top:14px;text-align:center"></p>
+        <p class="muted" id="loginMsg" style="margin-top:16px;text-align:center"></p>
       </div>
-      <p class="seg-login">🔒 Acceso seguro y cifrado · exclusivo para clientes de condor.ai</p>
+      <p class="seg-login">
+        <svg class="icn" style="width:15px;height:15px" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+        Acceso seguro y cifrado, exclusivo para clientes de condor.ai
+      </p>
     </div>
 
     <!-- DASHBOARD -->
     <div id="dash" style="display:none">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
-        <h1 style="font-size:1.8rem">Hola 👋</h1>
-        <button class="btn btn-soft" style="min-height:42px;font-size:.9rem" id="btnOut">Salir</button>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:22px">
+        <h1 style="font-size:1.9rem;margin:0">Hola</h1>
+        <button class="btn btn-soft" style="min-height:44px;font-size:.9rem;padding:0 18px" id="btnOut">Salir</button>
       </div>
       <div id="dashBody"></div>
     </div>
 
-    <p id="cargando" class="muted" style="text-align:center">Cargando…</p>
+    <div id="cargando" class="loader"><div class="spinner"></div><span>Cargando tu portal…</span></div>
   </div>
 
   <script>
@@ -86,6 +203,9 @@
     const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9nbXZkdGh4d2NtdnFqbHhocHNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2NDEwMTksImV4cCI6MjA5NzIxNzAxOX0.wo6zSUlMejjYu1hSweZcWEBBdCvBgVNWg3xtLzFTIrI";
     const sb = supabase.createClient(SUPABASE_URL, ANON_KEY);
     const FUNCTIONS = SUPABASE_URL + "/functions/v1";
+
+    // Ícono de candado reutilizable (sin emojis)
+    const LOCK_SVG = '<svg class="icn" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
 
     // Botón inteligente: crea el cobro con el monto exacto del cliente
     window.pagar = async function(tipo){
@@ -104,7 +224,7 @@
     const $ = id => document.getElementById(id);
     const esc = s => String(s||"").replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
     const badge = (estado) => {
-      const m = {pagado:["b-ok","Pagado ✓"], al_dia:["b-aldia","Al día"], vencido:["b-pend","Vencido"], pendiente:["b-pend","Pendiente"]};
+      const m = {pagado:["b-ok","Pagado"], al_dia:["b-aldia","Al día"], vencido:["b-pend","Vencido"], pendiente:["b-pend","Pendiente"]};
       const [c,t] = m[estado] || ["b-pend", estado||"—"]; return `<span class="badge ${c}">${t}</span>`;
     };
 
@@ -154,11 +274,11 @@
           ${c.web_url?`<div class="frow"><b>Tu sitio</b><a class="lnk" href="${esc(c.web_url)}" target="_blank" rel="noopener">Ver web →</a></div>`:""}
         </div>
         ${(setupBtn||mensualBtn||paypalBtn)?`<div class="pcard">
-          <div class="seg-pay"><span class="seg-lock">🔒</span><div><b>Pago 100% seguro</b><span>Procesado por Mercado Pago. Los datos de tu tarjeta viajan cifrados — nosotros nunca los vemos ni los guardamos.</span></div></div>
+          <div class="seg-pay"><span class="seg-lock">${LOCK_SVG}</span><div><b>Pago 100% seguro</b><span>Procesado por Mercado Pago. Los datos de tu tarjeta viajan cifrados — nosotros nunca los vemos ni los guardamos.</span></div></div>
           <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:16px">${setupBtn}${mensualBtn}${paypalBtn}</div>
-          <div class="trust-row"><span>🔒 Cifrado SSL</span><span>·</span><span><b>Mercado Pago</b></span><span>·</span><span>Comprobante al instante</span></div>
-        </div>`:`<div class="pcard"><p>¡Estás al día! 🎉 Gracias por confiar en condor.ai.</p></div>`}
-        <div class="pcard" id="histCard" style="margin-top:18px"><h3 style="font-size:1.05rem;margin-bottom:6px">Historial de pagos</h3><p class="muted" id="histBody">Cargando…</p></div>
+          <div class="trust-row"><span>Cifrado SSL</span><span>·</span><span><b>Mercado Pago</b></span><span>·</span><span>Comprobante al instante</span></div>
+        </div>`:`<div class="pcard"><p>Estás al día. Gracias por confiar en condor.ai.</p></div>`}
+        <div class="pcard" id="histCard" style="margin-top:18px"><h3 style="font-size:1.05rem;margin:0 0 6px">Historial de pagos</h3><p class="muted" id="histBody">Cargando…</p></div>
         <p class="muted" style="text-align:center;margin-top:18px">¿Dudas? <a class="lnk" href="https://wa.me/56988989824" target="_blank" rel="noopener">Escríbenos por WhatsApp</a></p>`;
 
       // Historial de pagos + comprobantes
@@ -168,7 +288,7 @@
       if(!pagos || !pagos.length){ hb.textContent = "Aún no tienes pagos registrados."; }
       else {
         window.__pagos = pagos;
-        hb.innerHTML = pagos.map(p=>`<div class="frow"><div><b>${p.tipo==="mensual"?"Mensualidad":"Setup"}</b> · ${mon} ${(p.monto||0).toLocaleString()}<br><span style="font-size:.82rem">${(p.creado_en||"").slice(0,10)}</span></div><div style="text-align:right">${badge(p.estado)}${p.estado==="pagado"?`<br><a class="lnk" style="font-size:.84rem;cursor:pointer" onclick="comprobante('${p.id}')">Descargar comprobante</a>`:""}</div></div>`).join("");
+        hb.innerHTML = pagos.map(p=>`<div class="frow"><div><b>${p.tipo==="mensual"?"Mensualidad":"Setup"}</b> · ${mon} ${(p.monto||0).toLocaleString()}<br><span style="font-size:.82rem">${(p.creado_en||"").slice(0,10)}</span></div><div style="text-align:right">${badge(p.estado)}${p.estado==="pagado"?`<br><a class="lnk" style="font-size:.84rem" onclick="comprobante('${p.id}')">Descargar comprobante</a>`:""}</div></div>`).join("");
       }
     }
 
@@ -186,7 +306,7 @@
         .tot{font-size:1.5rem;font-weight:700;margin-top:18px}
         .ok{display:inline-block;background:#e7f5ee;color:#0a7d4f;font-weight:700;padding:5px 12px;border-radius:99px;font-size:.85rem}
         @media print{.np{display:none}}</style></head><body>
-        <div class="h"><div><h1>condor.ai</h1><div class="muted">Comprobante de pago</div></div><div class="ok">PAGADO ✓</div></div>
+        <div class="h"><div><h1>condor.ai</h1><div class="muted">Comprobante de pago</div></div><div class="ok">PAGADO</div></div>
         <div style="margin-top:24px">
           <div class="row"><span class="muted">N° comprobante</span><b>${p.id.slice(0,8).toUpperCase()}</b></div>
           <div class="row"><span class="muted">Fecha</span><b>${(p.creado_en||"").slice(0,10)}</b></div>
