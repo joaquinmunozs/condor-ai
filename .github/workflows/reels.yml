@@ -2,8 +2,8 @@ name: Barbara Reels - videos RRSS
 
 on:
   schedule:
-    # Mar(2) 09:00 Perú = ugc (vocera habla, Veo 3.1) · Jue(4) 09:00 Perú = trailer industria (Seedance 2.0)  (14:00 UTC)
-      - cron: '0 14 * * 2,4'
+    # Mar(2) ugc (vocera habla, Veo 3.1) · Jue(4) trailer industria (Seedance 2.0) · 09:00 Chile = 13:00 UTC (invierno UTC-4; en verano UTC-3 serían 10:00)
+      - cron: '0 13 * * 2,4'
   workflow_dispatch:
     inputs:
       tipo:

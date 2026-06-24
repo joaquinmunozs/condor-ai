@@ -8,7 +8,7 @@
 //          TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
 // Variables: DIA (lunes|miercoles|viernes|test) · RETRY=1 (reintento del comando "Denuevo barbara")
 
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 
 const AK = process.env.ANTHROPIC_API_KEY;
@@ -90,11 +90,10 @@ const schema = {
 
 // ---- Higgsfield: generar imagen y devolver buffer ----
 function genImagen(prompt, idx) {
-  const safe = prompt.replace(/"/g, "'").slice(0, 1500);
-  const out = execSync(
-    `higgsfield generate create nano_banana_2 --prompt "${safe}" --aspect_ratio 4:5 --resolution 1k --wait --wait-timeout 8m`,
-    { encoding: "utf8", timeout: 9 * 60 * 1000, stdio: ["ignore", "pipe", "pipe"] }
-  );
+  // execFileSync (sin shell) para que saltos de línea/comillas del prompt no rompan el comando.
+  const safe = prompt.replace(/\s+/g, " ").trim().slice(0, 1500);
+  const args = ["generate", "create", "nano_banana_2", "--prompt", safe, "--aspect_ratio", "4:5", "--resolution", "1k", "--wait", "--wait-timeout", "8m"];
+  const out = execFileSync("higgsfield", args, { encoding: "utf8", timeout: 9 * 60 * 1000, stdio: ["ignore", "pipe", "pipe"] });
   const url = (out.trim().split("\n").pop() || "").trim();
   if (!/^https?:\/\//.test(url)) throw new Error("Higgsfield no devolvió URL (slide " + (idx + 1) + "): " + out.slice(-160));
   return url;
