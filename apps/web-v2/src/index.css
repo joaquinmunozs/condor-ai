@@ -15,7 +15,7 @@
   --azul: #2747ff;
   --vio: #7a5bff;
   --rojo: #ff3b4e;
-  --rojo-ink: #e5293c; /* CTA fill con texto blanco — contraste AA en texto grande */
+  --rojo-ink: #cf1c2e; /* CTA fill con texto blanco — contraste 5.44:1 (AA en texto normal) */
   --grad: linear-gradient(115deg, #2747ff 0%, #7a5bff 48%, #ff3b4e 100%);
   --grad-soft: linear-gradient(115deg, #2747ff22 0%, #7a5bff1a 48%, #ff3b4e1a 100%);
 

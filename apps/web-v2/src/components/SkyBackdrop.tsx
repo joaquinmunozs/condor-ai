@@ -5,8 +5,8 @@ import { useEffect, useRef } from "react";
  *
  * Fondo fijo que ASCIENDE de día a noche según el scroll:
  *   capa base  = degradado azul→noche (respaldo si faltan imágenes)
- *   capa cielo = foto del cielo andino  (/assets/sky/cielo-andino.jpg)
- *   capa espacio = foto del espacio      (/assets/sky/espacio.jpg)
+ *   capa cielo = foto del cielo andino  (/assets/sky/cielo-andino.webp)
+ *   capa espacio = foto del espacio      (/assets/sky/espacio.webp)
  *
  * La transición se concentra en una BANDA corta de scroll [BAND_A, BAND_B]
  * con curva smoothstep, para que el cruce por el "tono medio" (donde ningún
@@ -92,7 +92,7 @@ export default function SkyBackdrop() {
       {/* foto cielo andino (altitud baja) */}
       <div
         ref={skyRef}
-        style={{ ...layer, backgroundImage: "url(/assets/sky/cielo-andino.jpg)", opacity: 1 }}
+        style={{ ...layer, backgroundImage: "url(/assets/sky/cielo-andino.webp)", opacity: 1 }}
       />
       {/* foto espacio (altitud alta) — blur suave para legibilidad nocturna.
           El scale leve evita que el desenfoque deje bordes transparentes. */}
@@ -100,7 +100,7 @@ export default function SkyBackdrop() {
         ref={spaceRef}
         style={{
           ...layer,
-          backgroundImage: "url(/assets/sky/espacio.jpg)",
+          backgroundImage: "url(/assets/sky/espacio.webp)",
           opacity: 0,
           filter: "blur(3px)",
           transform: "scale(1.06)",
