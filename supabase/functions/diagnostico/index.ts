@@ -55,6 +55,59 @@ async function metaCAPI(opts: { email: string; phone: string; ip: string; ua: st
   } catch (e) { console.error("CAPI falló:", String(e).slice(0, 120)); }
 }
 
+// ---- Email del diagnóstico (Resend) — cierra la promesa "te enviamos los resultados" ----
+const EMAIL_FROM = Deno.env.get("EMAIL_FROM") || "condor.ai <onboarding@resend.dev>";
+const WSP_NUM = "56988989824";
+const esc = (s: unknown) =>
+  String(s ?? "").replace(/[&<>"]/g, (c) =>
+    c === "&" ? "&amp;" : c === "<" ? "&lt;" : c === ">" ? "&gt;" : "&quot;");
+
+async function enviarCorreo(to: string, subject: string, html: string): Promise<boolean> {
+  const KEY = Deno.env.get("RESEND_API_KEY");
+  if (!KEY || !to) return false;
+  try {
+    const r = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: "Bearer " + KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({ from: EMAIL_FROM, to: [to], subject, html }),
+    });
+    return r.ok;
+  } catch { return false; }
+}
+
+// Correo estético (HTML) con el diagnóstico generado por la IA
+function emailDiagnostico(negocio: string, diag: any): string {
+  const problemas = (diag.problemas ?? [])
+    .map(
+      (p: string) =>
+        `<tr><td style="padding:7px 0;font-size:15px;color:#444;line-height:1.55"><span style="color:#7a5bff">›</span> ${esc(p)}</td></tr>`,
+    )
+    .join("");
+  const wa = `https://wa.me/${WSP_NUM}?text=${encodeURIComponent(
+    `Hola condor.ai, hice el diagnóstico para "${negocio || "mi negocio"}" y quiero avanzar.`,
+  )}`;
+  return `<!DOCTYPE html><html><body style="margin:0;background:#f4f4f7;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f7;padding:32px 0"><tr><td align="center">
+    <table width="100%" cellpadding="0" cellspacing="0" style="max-width:540px;background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 14px 40px -18px rgba(20,20,40,.25)">
+      <tr><td style="background:linear-gradient(115deg,#2747ff 0%,#7a5bff 48%,#ff3b4e 100%);padding:34px 32px;text-align:center">
+        <div style="color:#fff;font-size:22px;font-weight:700;letter-spacing:-.5px">condor.ai</div>
+        <div style="color:rgba(255,255,255,.92);font-size:14px;margin-top:4px">Tu diagnóstico${negocio ? " · " + esc(negocio) : ""}</div>
+      </td></tr>
+      <tr><td style="padding:32px 32px 8px">
+        <p style="font-size:16px;color:#1a1a1a;margin:0 0 14px">${esc(diag.saludo || "Aquí está tu diagnóstico 👋")}</p>
+        <p style="font-size:15px;color:#444;line-height:1.65;margin:0 0 22px">${esc(diag.diagnostico || "")}</p>
+        ${problemas ? `<p style="font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#7a5bff;margin:0 0 6px">Lo que te está costando clientes</p><table cellpadding="0" cellspacing="0" style="margin:0 0 22px">${problemas}</table>` : ""}
+        ${diag.recomendacion ? `<table cellpadding="0" cellspacing="0" width="100%" style="background:#f5f3ff;border-radius:12px;margin:0 0 26px"><tr><td style="padding:18px 20px"><p style="font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#2747ff;margin:0 0 6px">Recomendación</p><p style="font-size:15px;color:#333;line-height:1.6;margin:0">${esc(diag.recomendacion)}</p></td></tr></table>` : ""}
+        <table cellpadding="0" cellspacing="0" style="margin:0 auto 22px"><tr><td style="border-radius:999px;background:linear-gradient(115deg,#2747ff,#7a5bff,#ff3b4e)">
+          <a href="${wa}" style="display:inline-block;padding:15px 34px;color:#fff;font-size:16px;font-weight:700;text-decoration:none;border-radius:999px">Hablemos por WhatsApp →</a>
+        </td></tr></table>
+        <p style="font-size:13px;color:#888;line-height:1.6;margin:0 0 6px;text-align:center">Te respondemos en minutos · sin compromiso</p>
+      </td></tr>
+      <tr><td style="background:#fafafa;padding:18px 32px;text-align:center;font-size:12px;color:#999">condor.ai · Inteligencia artificial para hacer crecer tu negocio</td></tr>
+    </table>
+  </td></tr></table></body></html>`;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
   if (req.method !== "POST") return json({ ok: true, servicio: "condor.ai Diagnóstico" });
@@ -205,6 +258,11 @@ Genera el diagnóstico personalizado del negocio descrito arriba.`;
       ua: req.headers.get("user-agent") || "",
       eventId: (d["event_id"] ?? "").toString(),
     });
+  }
+
+  // ---- Enviar el diagnóstico por correo (cierra la promesa "te enviamos los resultados") ----
+  if (emailOk && !diag.bloqueado) {
+    await enviarCorreo(email, "Tu diagnóstico de condor.ai 🦅", emailDiagnostico(negocio, diag));
   }
 
   delete diag.como_cerrar; // nota interna de ventas: se guarda en la DB pero NO se devuelve al navegador del cliente
