@@ -21,7 +21,7 @@ export type SeoEntry = { title: string; description: string; image?: string };
 
 export const ROUTES_SEO: Record<string, SeoEntry> = {
   "/": {
-    title: "condor.ai · La IA ya despegó. ¿Te quedas en tierra?",
+    title: "condor.ai · La IA ya despegó. ¿Te quedarás en tierra?",
     description:
       "Tu competencia ya usa IA. condor.ai: webs, videos con IA y automatizaciones que ponen a tu negocio adelante en LATAM. Diagnóstico con IA gratis en 2 minutos.",
   },

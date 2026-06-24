@@ -31,7 +31,7 @@ export default function Hero() {
         </p>
         <h1 className="hero-title reveal in">
           La IA ya despegó.
-          <br />¿Te quedas en <span className="grad-tx">tierra</span>?
+          <br />¿Te quedarás en <span className="grad-tx">tierra</span>?
         </h1>
         <p className="hero-lead reveal in">
           Cada día que esperas, tu competencia vende más rápido, atiende mejor y
