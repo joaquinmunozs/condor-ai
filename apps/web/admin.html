@@ -137,6 +137,11 @@
     .cal-cube{width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:9px;font-size:.6rem;font-weight:750;letter-spacing:.02em;color:#fff;background:linear-gradient(135deg,#3b6cff,#6b4bff);border:1px solid rgba(255,255,255,.18);box-shadow:0 3px 10px -4px rgba(91,134,255,.85);cursor:pointer;transition:transform .14s,box-shadow .2s;user-select:none}
     .cal-cube:hover{transform:translateY(-2px) scale(1.07);box-shadow:0 7px 16px -4px rgba(91,134,255,1);z-index:1}
     .cal-cube:active{transform:scale(.96)}
+    /* Estados: reunión ya pasada = gris · reunión en curso ahora = verde (parpadea) */
+    .cal-cube.pasada{background:linear-gradient(135deg,#4a5066,#3a3f52);box-shadow:0 3px 9px -5px rgba(0,0,0,.6);opacity:.6;color:rgba(255,255,255,.7)}
+    .cal-cube.pasada:hover{box-shadow:0 6px 14px -5px rgba(0,0,0,.7)}
+    .cal-cube.encurso{background:linear-gradient(135deg,#15a34a,#22c55e);box-shadow:0 3px 14px -3px rgba(34,197,94,.95);animation:cubePulse 1.8s ease-in-out infinite}
+    @keyframes cubePulse{0%,100%{box-shadow:0 3px 14px -3px rgba(34,197,94,.95)}50%{box-shadow:0 4px 22px 0 rgba(34,197,94,1)}}
 
     /* Modales glass */
     .cal-overlay{display:none;position:fixed;inset:0;background:rgba(3,6,20,.6);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:200;align-items:center;justify-content:center}
@@ -313,6 +318,7 @@
   <div class="cal-overlay" id="calDetalle">
     <div class="cal-modal" style="max-width:420px">
       <h3 id="det_titulo" style="margin-bottom:8px"></h3>
+      <span id="det_estado" style="display:none;font-size:.72rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:4px 10px;border-radius:999px;margin-bottom:8px"></span>
       <p id="det_fecha" style="color:var(--tx-2);font-size:.9rem;margin-bottom:6px"></p>
       <p id="det_cliente" style="font-size:.9rem;margin-bottom:6px;font-weight:600"></p>
       <p id="det_desc" style="margin-bottom:10px;white-space:pre-line"></p>
@@ -323,7 +329,9 @@
         <a class="btn btn-soft mini" id="det_gcal" target="_blank" rel="noopener" style="flex:1"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M3 10h18M8 3v4M16 3v4"/></svg> Google</a>
         <button class="btn btn-soft mini" id="det_ical" style="flex:1"><svg viewBox="0 0 24 24"><path d="M8 2v4M16 2v4M3 9h18M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/></svg> Apple / .ics</button>
       </div>
-      <button class="btn btn-soft" id="btnCerrarDetalle" style="width:100%;margin-top:14px">Cerrar</button>
+      <button class="btn btn-soft" id="btnEliminarReunion" style="width:100%;margin-top:14px;color:#ff8a8a;border-color:rgba(255,90,90,.4)"><svg viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M10 11v6M14 11v6"/></svg> Eliminar reunión</button>
+      <button class="btn btn-soft" id="btnCerrarDetalle" style="width:100%;margin-top:10px">Cerrar</button>
+      <p id="det_delmsg" style="font-size:.8rem;color:var(--tx-2);margin-top:8px;text-align:center"></p>
     </div>
   </div>
 
@@ -669,7 +677,7 @@
         const eventos = calReuniones.filter(r => { const dt = new Date(r.fecha_hora); return dt.getFullYear()===año && dt.getMonth()===mes && dt.getDate()===d; });
         // Una reunión = un cubo con sus iniciales; clic abre su detalle
         const cubos = eventos.map(r =>
-          `<div class="cal-cube" data-rid="${esc(String(r.id))}" title="${esc(r.titulo)}">${esc(iniciales(r.titulo))}</div>`
+          `<div class="cal-cube ${estadoReunion(r)}" data-rid="${esc(String(r.id))}" title="${esc(r.titulo)}">${esc(iniciales(r.titulo))}</div>`
         ).join("");
         html += `<div class="cal-dia${esHoy ? " hoy" : ""}" data-fecha="${clave}">
           <div class="cal-num">${d}</div>${cubos ? `<div class="cal-cubes">${cubos}</div>` : ""}
@@ -690,6 +698,8 @@
     // Fecha a formato calendario UTC (YYYYMMDDTHHMMSSZ)
     function fmtCalDate(d){ return d.toISOString().replace(/[-:]/g,"").replace(/\.\d{3}/,""); }
     function calRango(r){ const ini=new Date(r.fecha_hora); const fin=new Date(ini.getTime()+(r.duracion_min||60)*60000); return {ini,fin}; }
+    // Estado por hora: "pasada" (ya terminó), "encurso" (entre inicio y fin ahora), "" (futura)
+    function estadoReunion(r){ const {ini,fin}=calRango(r); const ahora=new Date(); if(ahora>fin) return "pasada"; if(ahora>=ini && ahora<=fin) return "encurso"; return ""; }
     function gcalLink(r){
       const {ini,fin}=calRango(r);
       const det=(r.cliente?("Cliente: "+r.cliente+"\n"):"")+(r.descripcion||"");
@@ -708,7 +718,16 @@
       a.download=(r.titulo||"reunion").replace(/[^\w]+/g,"_")+".ics"; a.click();
     }
 
+    let detReunion = null;
     function abrirDetalle(r) {
+      detReunion = r;
+      $("det_delmsg").textContent = "";
+      const est = estadoReunion(r);
+      const badge = $("det_estado");
+      if (est === "pasada") { badge.textContent = "Finalizada"; badge.style.background = "rgba(120,130,150,.18)"; badge.style.color = "#aab3c5"; }
+      else if (est === "encurso") { badge.textContent = "● En curso ahora"; badge.style.background = "rgba(34,197,94,.18)"; badge.style.color = "#4ade80"; }
+      else { badge.textContent = "Próxima"; badge.style.background = "rgba(91,134,255,.18)"; badge.style.color = "#9bb4ff"; }
+      badge.style.display = "inline-block";
       const dt = new Date(r.fecha_hora);
       const dur = r.duracion_min >= 60 ? `${r.duracion_min/60}h` : `${r.duracion_min} min`;
       $("det_titulo").textContent = r.titulo;
@@ -803,6 +822,19 @@
 
     $("btnCerrarModal").addEventListener("click", () => $("calModal").classList.remove("open"));
     $("btnCerrarDetalle").addEventListener("click", () => $("calDetalle").classList.remove("open"));
+
+    // Eliminar la reunión abierta en el detalle
+    $("btnEliminarReunion").addEventListener("click", async () => {
+      if (!detReunion) return;
+      if (!confirm(`¿Eliminar la reunión "${detReunion.titulo}"? No se puede deshacer.`)) return;
+      $("btnEliminarReunion").disabled = true;
+      $("det_delmsg").textContent = "Eliminando…";
+      const { error } = await sb.from("reuniones").delete().eq("id", detReunion.id);
+      $("btnEliminarReunion").disabled = false;
+      if (error) { $("det_delmsg").textContent = "Error: " + error.message; return; }
+      $("calDetalle").classList.remove("open");
+      cargarCalendario();
+    });
     $("calModal").addEventListener("click", e => { if (e.target === $("calModal")) $("calModal").classList.remove("open"); });
     $("calDetalle").addEventListener("click", e => { if (e.target === $("calDetalle")) $("calDetalle").classList.remove("open"); });
     // ── Fin Calendario ─────────────────────────────────────────────
