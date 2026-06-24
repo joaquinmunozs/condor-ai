@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
@@ -30,7 +31,7 @@ export default function Hero() {
         </p>
         <h1 className="hero-title reveal in">
           La IA ya despegó.
-          <br />¿Te quedas en <span className="grad-tx">tierra</span>?
+          <br />¿Te quedarás en <span className="grad-tx">tierra</span>?
         </h1>
         <p className="hero-lead reveal in">
           Cada día que esperas, tu competencia vende más rápido, atiende mejor y
@@ -38,9 +39,9 @@ export default function Hero() {
           negocio adelante. Descubre en 2 minutos qué te está dejando atrás.
         </p>
         <div className="hero-cta reveal in">
-          <a className="btn-cta" href="#diagnostico">
+          <Link className="btn-cta" to="/diagnostico">
             Quiero adelantarme <span aria-hidden="true">→</span>
-          </a>
+          </Link>
           <a className="btn-ghost" href="#servicios">
             Ver cómo lo hacemos
           </a>

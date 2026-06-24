@@ -11,14 +11,27 @@ export default function Altimetro() {
   const [prog, setProg] = useState(0);
 
   useEffect(() => {
-    const onScroll = () => {
+    let raf = 0;
+    let last = -1;
+    const medir = () => {
+      raf = 0;
       const max = document.documentElement.scrollHeight - window.innerHeight;
-      setProg(max > 0 ? Math.min(1, window.scrollY / max) : 0);
+      const p = max > 0 ? Math.min(1, window.scrollY / max) : 0;
+      // Coalesce a 1 medición por frame y solo re-render si cambió la altitud
+      // visible (~1m) — antes hacía setState en cada evento de scroll.
+      if (Math.abs(p - last) > 0.0002) {
+        last = p;
+        setProg(p);
+      }
     };
-    onScroll();
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(medir);
+    };
+    raf = requestAnimationFrame(medir); // medición inicial (diferida)
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onScroll);
     return () => {
+      if (raf) cancelAnimationFrame(raf);
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
     };

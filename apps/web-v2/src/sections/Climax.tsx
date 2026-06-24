@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 export default function Climax() {
   return (
     <section className="section climax" id="climax">
@@ -14,10 +16,9 @@ export default function Climax() {
           tu negocio este año.
         </p>
         <div className="reveal">
-          {/* TODO integrar al quiz real: /diagnostico-gratis/ */}
-          <a className="btn-cta xl" href="/diagnostico-gratis/">
+          <Link className="btn-cta xl" to="/diagnostico">
             Haz tu diagnóstico gratis <span aria-hidden="true">→</span>
-          </a>
+          </Link>
         </div>
       </div>
     </section>

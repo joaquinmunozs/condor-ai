@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 const PASOS = [
   {
     n: "01",
@@ -44,10 +46,9 @@ export default function Diagnostico() {
         </ol>
 
         <div className="diag-cta reveal">
-          {/* TODO integrar al quiz real: /diagnostico-gratis/ */}
-          <a className="btn-cta lg" href="/diagnostico-gratis/">
+          <Link className="btn-cta lg" to="/diagnostico">
             Empezar mi diagnóstico gratis <span aria-hidden="true">→</span>
-          </a>
+          </Link>
           <p className="diag-note mono-label">Sin tarjeta · sin compromiso · 2 min</p>
         </div>
         </div>

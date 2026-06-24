@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { useLenis } from "./lib/useLenis";
+import Seo from "./components/Seo";
 import SkyBackdrop from "./components/SkyBackdrop";
 import FlowField from "./components/FlowField";
 import Nav from "./components/Nav";
@@ -32,6 +33,7 @@ export default function Layout() {
 
   return (
     <>
+      <Seo />
       <SkyBackdrop />
       <FlowField />
       <Nav />
