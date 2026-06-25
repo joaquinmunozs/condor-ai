@@ -6,6 +6,24 @@
   <meta name="description" content="Páginas web y landings profesionales para tu negocio, conectadas a WhatsApp y Google. Entrega en 48–72h." />
   <link rel="icon" type="image/png" href="/assets/favicon.png" /><link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
   <link rel="stylesheet" href="/assets/styles.css" /><script src="/assets/app.js" defer></script>
+  <style>
+    .demos-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:22px;margin-top:8px}
+    .demo-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:22px;overflow:hidden;display:flex;flex-direction:column;transition:transform .35s cubic-bezier(.2,.7,.2,1),box-shadow .35s,border-color .3s}
+    .demo-card:hover{transform:translateY(-6px);box-shadow:0 28px 60px -28px rgba(0,0,0,.7);border-color:rgba(120,150,255,.4)}
+    .demo-thumb{position:relative;display:block;aspect-ratio:16/10;overflow:hidden}
+    .demo-thumb img{width:100%;height:100%;object-fit:cover;transition:transform .5s cubic-bezier(.2,.7,.2,1)}
+    .demo-card:hover .demo-thumb img{transform:scale(1.06)}
+    .demo-ai{position:absolute;top:12px;left:12px;background:linear-gradient(135deg,#3b6cff,#7a5bff);color:#fff;font-size:.72rem;font-weight:700;letter-spacing:.02em;padding:6px 11px;border-radius:999px;box-shadow:0 6px 18px -6px rgba(91,134,255,.9)}
+    .demo-body{padding:22px 22px 24px;display:flex;flex-direction:column;flex:1}
+    .demo-rubro{font-size:.74rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--tx-2,#8b93a7)}
+    .demo-body h3{font-size:1.32rem;margin:6px 0 8px;letter-spacing:-.02em}
+    .demo-body p{font-size:.94rem;color:var(--tx-2,#8b93a7);line-height:1.6;margin:0}
+    .demo-feats{list-style:none;padding:0;margin:14px 0 18px;display:flex;flex-wrap:wrap;gap:7px}
+    .demo-feats li{font-size:.76rem;font-weight:600;background:rgba(120,150,255,.12);color:#9bb4ff;padding:5px 11px;border-radius:999px}
+    .demo-btn{margin-top:auto;align-self:flex-start;min-height:42px;padding:0 20px;font-size:.9rem}
+    .demos-note{text-align:center;margin-top:30px;color:var(--tx-2,#8b93a7)}
+    .demos-note a{color:#9bb4ff;font-weight:600}
+  </style>
 </head>
 <body id="top">
   <nav id="nav"><div class="nav-in">
@@ -23,10 +41,68 @@
   </header>
 
   <section><div class="wrap"><div class="split">
-    <div class="rev"><h2>Diseño premium, en 48–72 horas</h2><p>Creamos tu página a medida, lista para celular, rápida y enfocada en que te contacten. Sin plantillas genéricas.</p>
-      <ul class="tick"><li>Conexión directa a WhatsApp</li><li>Aparece en Google (tu negocio + tu zona)</li><li>Carta / catálogo digital con código QR</li><li>Hosting y dominio incluidos</li><li>Cambios y soporte continuos</li></ul></div>
+    <div class="rev"><h2>Diseño premium, en 48 horas</h2><p>Creamos tu página a medida, lista para celular, rápida y enfocada en que te contacten. Sin plantillas genéricas.</p>
+      <ul class="tick"><li>Conexión directa a WhatsApp</li><li>Aparece en Google (tu negocio + tu zona)</li><li>Catálogo digital · integración con Shopify</li><li>Asistente con IA que atiende y vende solo</li><li>Hosting, dominio y soporte incluidos</li></ul></div>
     <div class="visual rev d2"><video class="visual-bg" src="/assets/svc/web.mp4" autoplay muted loop playsinline></video><span class="vcap">Tu web profesional</span></div>
   </div></div></section>
+
+  <!-- ====== VITRINA: EJEMPLOS EN VIVO POR RUBRO ====== -->
+  <section class="proceso" id="ejemplos"><div class="wrap">
+    <div class="head-c rev"><p class="eyebrow">Ejemplos en vivo · navegables</p><h2 class="titulo">Sitios reales que diseñamos, por rubro</h2><p class="sub">No son maquetas. Entra, navega y conversa con el asistente de IA de cada uno. Así se ve un sitio condor.ai a medida.</p></div>
+
+    <div class="demos-grid">
+      <!-- E-COMMERCE -->
+      <article class="demo-card rev d1">
+        <a class="demo-thumb" href="/demos/ecommerce/" target="_blank" rel="noopener"><img src="/demos/ecommerce/hero.jpg" alt="Demo e-commerce CUMBRE" loading="lazy"><span class="demo-ai">★ Asistente IA</span></a>
+        <div class="demo-body">
+          <span class="demo-rubro">E-commerce / Tiendas</span>
+          <h3>Tienda online que vende sola</h3>
+          <p>Catálogo, carrito, suscripciones y un asistente de IA que recomienda productos y cierra la venta. Conectable a <strong>Shopify</strong> y a <strong>WhatsApp</strong>.</p>
+          <ul class="demo-feats"><li>Catálogo con filtros</li><li>Pasarela y Shopify</li><li>Asistente IA de ventas</li></ul>
+          <a class="btn btn-grad demo-btn" href="/demos/ecommerce/" target="_blank" rel="noopener">Ver demo en vivo →</a>
+        </div>
+      </article>
+
+      <!-- INMOBILIARIO -->
+      <article class="demo-card rev d2">
+        <a class="demo-thumb" href="/demos/inmobiliario/" target="_blank" rel="noopener"><img src="/demos/inmobiliario/hero.jpg" alt="Demo inmobiliario HÁBITAT" loading="lazy"><span class="demo-ai">★ Asistente IA</span></a>
+        <div class="demo-body">
+          <span class="demo-rubro">Inmobiliario</span>
+          <h3>Portal de propiedades premium</h3>
+          <p>Buscador con filtros, fichas de propiedad y una asesora de IA que califica al cliente, agenda visitas y simula crédito — directo a tu <strong>WhatsApp</strong>.</p>
+          <ul class="demo-feats"><li>Buscador de propiedades</li><li>Fichas + galería</li><li>Asesora IA que agenda</li></ul>
+          <a class="btn btn-grad demo-btn" href="/demos/inmobiliario/" target="_blank" rel="noopener">Ver demo en vivo →</a>
+        </div>
+      </article>
+
+      <!-- SERVICIOS -->
+      <article class="demo-card rev d3">
+        <a class="demo-thumb" href="/demos/servicios/" target="_blank" rel="noopener"><img src="/demos/servicios/hero.jpg" alt="Demo servicios VÉRTICE" loading="lazy"><span class="demo-ai">★ Asistente IA</span></a>
+        <div class="demo-body">
+          <span class="demo-rubro">Servicios profesionales</span>
+          <h3>Clínicas, estudios y consultoras</h3>
+          <p>Tratamientos con precios, equipo y una recepcionista de IA que responde dudas y <strong>agenda citas 24/7</strong>. Ideal para clínicas, abogados o cualquier servicio.</p>
+          <ul class="demo-feats"><li>Servicios y precios</li><li>Agenda de citas</li><li>Recepción IA 24/7</li></ul>
+          <a class="btn btn-grad demo-btn" href="/demos/servicios/" target="_blank" rel="noopener">Ver demo en vivo →</a>
+        </div>
+      </article>
+    </div>
+
+    <p class="demos-note rev">¿Tu rubro no está aquí? Lo diseñamos igual, a tu medida. <a href="/contacto/">Cuéntanos tu negocio →</a></p>
+  </div></section>
+
+  <!-- ====== POR QUÉ VALEN LO QUE VALEN ====== -->
+  <section><div class="wrap">
+    <div class="head-c rev"><p class="eyebrow">Qué incluye</p><h2 class="titulo">No es una web. Es un vendedor con inteligencia artificial.</h2><p class="sub">Cada sitio se entrega <strong>en 48 horas</strong>, totalmente personalizado y listo para integrarse a tus herramientas.</p></div>
+    <div class="grid-3">
+      <div class="card rev d1"><div class="ic">🤖</div><h3>Asistente de IA propio</h3><p>Un agente entrenado con tu negocio que atiende, recomienda, cotiza y agenda solo — las 24 horas. El feature que ningún freelancer te da.</p></div>
+      <div class="card rev d2"><div class="ic">🛒</div><h3>Se conecta a Shopify</h3><p>¿Vendes productos? Sincronizamos tu catálogo, inventario y pagos con Shopify para que gestiones todo desde un solo lugar.</p></div>
+      <div class="card rev d3"><div class="ic">💬</div><h3>Integrado a WhatsApp</h3><p>Cada visita se convierte en una conversación. El sitio y el bot llevan al cliente directo a tu WhatsApp, listo para cerrar.</p></div>
+      <div class="card rev d1"><div class="ic">⚡</div><h3>Listo en 48 horas</h3><p>De la idea a publicado en dos días hábiles. Sin meses de espera ni agencias que desaparecen.</p></div>
+      <div class="card rev d2"><div class="ic">🎨</div><h3>100% personalizado</h3><p>Tu marca, tus colores, tus fotos (o las generamos con IA). Diseño único, jamás una plantilla repetida.</p></div>
+      <div class="card rev d3"><div class="ic">📈</div><h3>Pensado para vender</h3><p>SEO, velocidad, móvil primero y cada sección diseñada para convertir visitas en clientes reales.</p></div>
+    </div>
+  </div></section>
 
   <section class="proceso"><div class="wrap">
     <div class="head-c rev"><p class="eyebrow">Ideal para</p><h2 class="titulo">Cualquier negocio local</h2></div>
