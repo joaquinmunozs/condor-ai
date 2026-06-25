@@ -63,10 +63,20 @@ function genVideo(model, prompt, dur, idx, extraArgs = []) {
     "--aspect_ratio", "9:16", "--duration", String(dur),
     ...extraArgs, "--wait", "--wait-timeout", "14m",
   ];
-  const out = execFileSync("higgsfield", args, { encoding: "utf8", timeout: 15 * 60 * 1000, stdio: ["ignore", "pipe", "pipe"] });
-  const url = (out.trim().split("\n").pop() || "").trim();
-  if (!/^https?:\/\//.test(url)) throw new Error("Higgsfield sin URL (clip " + (idx + 1) + "): " + out.slice(-160));
-  return url;
+  // Higgsfield falla transitoriamente a veces (devuelve vacío). Reintentamos hasta 3 veces.
+  let ultimo = "";
+  for (let intento = 1; intento <= 3; intento++) {
+    try {
+      const out = execFileSync("higgsfield", args, { encoding: "utf8", timeout: 15 * 60 * 1000, stdio: ["ignore", "pipe", "pipe"] });
+      const url = (out.trim().split("\n").pop() || "").trim();
+      if (/^https?:\/\//.test(url)) return url;
+      ultimo = out.slice(-160);
+    } catch (e) {
+      ultimo = String(e.stderr || e.message || e).slice(-160);
+    }
+    console.log(`clip ${idx + 1}: intento ${intento}/3 sin URL, reintentando…`);
+  }
+  throw new Error("Higgsfield sin URL (clip " + (idx + 1) + ") tras 3 intentos: " + ultimo);
 }
 
 // ---- Unir N clips en un solo vertical 9:16 (re-encode para que el concat sea robusto) ----

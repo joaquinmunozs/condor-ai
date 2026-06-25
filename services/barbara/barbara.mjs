@@ -93,10 +93,20 @@ function genImagen(prompt, idx) {
   // execFileSync (sin shell) para que saltos de línea/comillas del prompt no rompan el comando.
   const safe = prompt.replace(/\s+/g, " ").trim().slice(0, 1500);
   const args = ["generate", "create", "nano_banana_2", "--prompt", safe, "--aspect_ratio", "4:5", "--resolution", "1k", "--wait", "--wait-timeout", "8m"];
-  const out = execFileSync("higgsfield", args, { encoding: "utf8", timeout: 9 * 60 * 1000, stdio: ["ignore", "pipe", "pipe"] });
-  const url = (out.trim().split("\n").pop() || "").trim();
-  if (!/^https?:\/\//.test(url)) throw new Error("Higgsfield no devolvió URL (slide " + (idx + 1) + "): " + out.slice(-160));
-  return url;
+  // Reintentos ante fallos transitorios de Higgsfield (respuesta vacía).
+  let ultimo = "";
+  for (let intento = 1; intento <= 3; intento++) {
+    try {
+      const out = execFileSync("higgsfield", args, { encoding: "utf8", timeout: 9 * 60 * 1000, stdio: ["ignore", "pipe", "pipe"] });
+      const url = (out.trim().split("\n").pop() || "").trim();
+      if (/^https?:\/\//.test(url)) return url;
+      ultimo = out.slice(-160);
+    } catch (e) {
+      ultimo = String(e.stderr || e.message || e).slice(-160);
+    }
+    console.log(`slide ${idx + 1}: intento ${intento}/3 sin URL, reintentando…`);
+  }
+  throw new Error("Higgsfield no devolvió URL (slide " + (idx + 1) + ") tras 3 intentos: " + ultimo);
 }
 
 async function main() {
