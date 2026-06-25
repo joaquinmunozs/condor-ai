@@ -104,7 +104,10 @@ function genImagen(prompt, idx) {
     } catch (e) {
       ultimo = String(e.stderr || e.message || e).slice(-160);
     }
-    console.log(`slide ${idx + 1}: intento ${intento}/3 sin URL, reintentando…`);
+    if (intento < 3) {
+      console.log(`slide ${idx + 1}: intento ${intento}/3 falló (${ultimo.slice(-60)}), esperando 45s…`);
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 45000); // backoff sync
+    }
   }
   throw new Error("Higgsfield no devolvió URL (slide " + (idx + 1) + ") tras 3 intentos: " + ultimo);
 }
