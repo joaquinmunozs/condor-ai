@@ -34,12 +34,21 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - name: Instalar CLI de Higgsfield
         run: npm install -g @higgsfield/cli
-      - name: Autenticar Higgsfield
+      - name: Autenticar Higgsfield (descifrar credenciales rotadas)
+        env:
+          HF_CREDS_KEY: ${{ secrets.HF_CREDS_KEY }}
+          HF_ACCESS: ${{ secrets.HIGGSFIELD_ACCESS_TOKEN }}
+          HF_REFRESH: ${{ secrets.HIGGSFIELD_REFRESH_TOKEN }}
         run: |
           mkdir -p ~/.config/higgsfield
-          cat > ~/.config/higgsfield/credentials.json <<EOF
-          {"access_token":"${{ secrets.HIGGSFIELD_ACCESS_TOKEN }}","refresh_token":"${{ secrets.HIGGSFIELD_REFRESH_TOKEN }}"}
-          EOF
+          if [ -n "$HF_CREDS_KEY" ] && [ -f services/barbara/hf-creds.enc ]; then
+            echo "Usando credenciales cifradas del repo (auto-rotación)."
+            openssl enc -d -aes-256-cbc -pbkdf2 -salt -in services/barbara/hf-creds.enc -out ~/.config/higgsfield/credentials.json -pass pass:"$HF_CREDS_KEY"
+          else
+            echo "Fallback: credenciales desde secrets sueltos."
+            printf '{"access_token":"%s","refresh_token":"%s"}' "$HF_ACCESS" "$HF_REFRESH" > ~/.config/higgsfield/credentials.json
+          fi
+          sha256sum ~/.config/higgsfield/credentials.json | awk '{print $1}' > /tmp/hf_before.sha
       - name: Generar reel y enviar a Telegram
         run: node services/barbara/reels.mjs
         env:
@@ -49,12 +58,25 @@ jobs:
           TIPO: ${{ github.event.inputs.tipo }}
           RETRY: ${{ github.event.inputs.retry }}
           INDUSTRIA: ${{ github.event.inputs.industria }}
-      - name: Guardar memoria
+      - name: Persistir credenciales rotadas + memoria
+        if: always()
+        env:
+          HF_CREDS_KEY: ${{ secrets.HF_CREDS_KEY }}
         run: |
           git config user.name "barbara-bot"
           git config user.email "bot@condorai.cl"
+          # Si el CLI rotó el token (creds cambiaron), re-cifrar y commitear
+          if [ -n "$HF_CREDS_KEY" ] && [ -f ~/.config/higgsfield/credentials.json ]; then
+            AFTER=$(sha256sum ~/.config/higgsfield/credentials.json | awk '{print $1}')
+            BEFORE=$(cat /tmp/hf_before.sha 2>/dev/null || echo "")
+            if [ "$AFTER" != "$BEFORE" ]; then
+              echo "Token rotado: actualizando hf-creds.enc"
+              openssl enc -aes-256-cbc -pbkdf2 -salt -in ~/.config/higgsfield/credentials.json -out services/barbara/hf-creds.enc -pass pass:"$HF_CREDS_KEY"
+              git add services/barbara/hf-creds.enc
+            fi
+          fi
           git add services/barbara/content-log.json
           if git diff --staged --quiet; then echo "sin cambios"; else
-            git commit -m "barbara reels: registro $(date +%Y-%m-%d)"
+            git commit -m "barbara reels: registro + token $(date +%Y-%m-%d)"
             for n in 1 2 3; do git pull --rebase origin main && git push && break || sleep 5; done
           fi
