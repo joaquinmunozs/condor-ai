@@ -31,7 +31,16 @@ jobs:
         with:
           node-version: '22'
       - name: ffmpeg (para unir clips)
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+        run: |
+          if command -v ffmpeg >/dev/null 2>&1; then
+            echo "ffmpeg ya disponible: $(ffmpeg -version | head -1)"
+          else
+            for n in 1 2 3; do
+              sudo apt-get update && sudo apt-get install -y ffmpeg && break
+              echo "apt falló (intento $n/3), reintentando en 15s…"; sleep 15
+            done
+            command -v ffmpeg >/dev/null 2>&1 || { echo "no se pudo instalar ffmpeg"; exit 1; }
+          fi
       - name: Instalar CLI de Higgsfield
         run: npm install -g @higgsfield/cli
       - name: Autenticar Higgsfield (descifrar credenciales rotadas)
