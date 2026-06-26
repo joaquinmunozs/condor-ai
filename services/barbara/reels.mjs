@@ -150,7 +150,17 @@ const schemaTrailer = {
   type: "object", additionalProperties: false,
   properties: {
     angulo: { type: "string", description: "Ángulo/idea ÚNICO de este trailer en una frase (para no repetir)." },
-    clips: { type: "array", description: "Exactamente 2 prompts EN INGLÉS de 15s, en orden, estilo trailer cinematográfico de la industria potenciada por IA. Hook visual fuerte en el primer segundo.", items: { type: "string" } },
+    clips: {
+      type: "array", description: "Exactamente 2 clips de 15s, en orden. Juntos cuentan un mini-trailer que EXPLICA cómo la IA transforma la industria, con voz en off.",
+      items: {
+        type: "object", additionalProperties: false,
+        properties: {
+          escena: { type: "string", description: "Prompt EN INGLÉS de la escena cinematográfica de 15s (la industria potenciada por IA). Hook visual fuerte en el primer segundo." },
+          locucion: { type: "string", description: "Voz en off EN ESPAÑOL neutro para ESTE clip (25-35 palabras = ~15s hablando). Explica de forma concreta y con gancho cómo la IA transforma la industria. El clip 1 engancha; el clip 2 cierra invitando a condor.ai. Las dos locuciones forman un solo discurso continuo, sin repetir." },
+        },
+        required: ["escena", "locucion"],
+      },
+    },
     texto_en_pantalla: { type: "string", description: "Frase aspiracional corta en español para sobreimprimir." },
     caption: { type: "string", description: "Caption para Instagram/TikTok con hook + valor para esa industria + invita a escribir + 5-8 hashtags." },
   },
@@ -167,18 +177,25 @@ async function hacerTrailer() {
   const industria = (process.env.INDUSTRIA || "").trim() || pool[Math.floor(Math.random() * pool.length)];
 
   const extra = isRetry ? "\n\n⚠️ REINTENTO: el trailer anterior fue rechazado. Haz uno claramente mejor y distinto." : "";
-  const look = "Cinematic premium trailer, vertical 9:16, dramatic camera movement, glossy modern color grade, epic uplifting score energy, futuristic but grounded, real-looking people and spaces of the industry transformed by AI, holographic data and subtle AI interface accents. NO logos, NO watermark, NO real brand names.";
+  const look = "Cinematic premium trailer, vertical 9:16, dramatic camera movement, glossy modern color grade, epic uplifting score energy, futuristic but grounded, real-looking people and spaces of the industry transformed by AI, holographic data and subtle AI interface accents. NO logos, NO watermark, NO real brand names, NO on-screen text.";
   const dir = await claude({
     model: "claude-sonnet-4-6", max_tokens: 2000,
-    system: `Eres Barbara, directora creativa de condor.ai. Diriges un REEL TRAILER cinematográfico vertical 9:16 (~30s, 2 clips de 15s) que muestra una industria concreta transformada por la IA, con máxima técnica de hook y retención. Es distinto y NO copia el carrusel de industrias del miércoles: aquí es cine, emoción y movimiento, no infografía. NUNCA repites ángulos de las piezas recientes (te las paso). Responde SOLO con el JSON.`,
+    system: `Eres Barbara, directora creativa de condor.ai. Diriges un REEL TRAILER cinematográfico vertical 9:16 (~30s, 2 clips de 15s) que muestra una industria concreta transformada por la IA, con máxima técnica de hook y retención. CLAVE: NO es solo cine con música — lleva una VOZ EN OFF en español neutro que EXPLICA, con datos y gancho, cómo la IA transforma esa industria (educativo y persuasivo, no aburrido). Es distinto y NO copia el carrusel del miércoles. NUNCA repites ángulos de las piezas recientes. Responde SOLO con el JSON.`,
     output_config: { format: { type: "json_schema", schema: schemaTrailer } },
-    messages: [{ role: "user", content: `Industria de hoy: ${industria}.\n\nLOOK OBLIGATORIO:\n${look}\n\nPIEZAS RECIENTES (no repitas):\n${recientes}${extra}\n\nDevuelve 2 prompts de clip (inglés, 15s c/u) que cuenten un mini-trailer de cómo la IA transforma un ${industria}.` }],
+    messages: [{ role: "user", content: `Industria de hoy: ${industria}.\n\nLOOK VISUAL OBLIGATORIO:\n${look}\n\nPIEZAS RECIENTES (no repitas):\n${recientes}${extra}\n\nDevuelve 2 clips (escena en inglés + locución en español de 25-35 palabras c/u) que cuenten, con voz en off explicativa, cómo la IA transforma un ${industria}. La locución debe sonar a trailer: potente, clara y que enseñe algo concreto.` }],
   });
   const plan = JSON.parse(textOf(dir));
   const clips = (plan.clips || []).slice(0, 2);
 
   const urls = [];
-  for (let i = 0; i < clips.length; i++) urls.push(genVideo("seedance_2_0", clips[i] + "\n\n" + look, 15, i, ["--resolution", "720p"]));
+  for (let i = 0; i < clips.length; i++) {
+    const escena = typeof clips[i] === "string" ? clips[i] : (clips[i].escena || "");
+    const locucion = typeof clips[i] === "string" ? "" : (clips[i].locucion || "");
+    const audio = locucion
+      ? `\n\nAudio: a confident cinematic narrator voiceover in clear neutral Latin American Spanish says: ${locucion} — over subtle epic background music, low in the mix. The narrator voice must be clear and front. No other speech.`
+      : "";
+    urls.push(genVideo("seedance_2_0", escena + audio + "\n\n" + look, 15, i, ["--resolution", "720p"]));
+  }
   if (!urls.length) throw new Error("No se generó ningún clip de trailer");
   const videoBuf = await unirClips(urls);
   return { plan, videoBuf, titulo: `🎬 Reel Trailer — IA en ${industria}`, tipoLog: "reel-trailer", extraLog: { industria } };
