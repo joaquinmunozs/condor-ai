@@ -49,7 +49,7 @@ const resp = await fetch("https://api.anthropic.com/v1/messages", {
   method: "POST",
   headers: { "x-api-key": KEY, "anthropic-version": "2023-06-01", "content-type": "application/json" },
   body: JSON.stringify({
-    model: "claude-haiku-4-5", max_tokens: 3000,
+    model: "claude-haiku-4-5", max_tokens: 8000,
     system,
     tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 6 }],
     output_config: { format: { type: "json_schema", schema } },
@@ -60,7 +60,16 @@ if (!resp.ok) { console.error("API error:", resp.status, (await resp.text()).sli
 const data = await resp.json();
 const texto = (data.content ?? []).filter(b => b.type === "text").map(b => b.text).join("");
 let out;
-try { out = JSON.parse(texto); } catch (e) { console.error("No parseó:", texto.slice(0, 400)); process.exit(1); }
+try {
+  out = JSON.parse(texto);
+} catch (_e1) {
+  // Parseo robusto: extrae el bloque JSON aunque venga con texto alrededor.
+  const ini = texto.indexOf("{"), fin = texto.lastIndexOf("}");
+  if (ini >= 0 && fin > ini) {
+    try { out = JSON.parse(texto.slice(ini, fin + 1)); } catch (_e2) { /* sigue null */ }
+  }
+}
+if (!out) { console.error("No parseó (stop_reason:", data.stop_reason + "):", texto.slice(-300)); process.exit(1); }
 const noticias = (out.noticias || []).slice(0, 3).map(n => ({ ...n, slug: slugify(n.titulo_articulo || n.titular) }));
 if (!noticias.length) { console.error("Sin noticias"); process.exit(1); }
 
