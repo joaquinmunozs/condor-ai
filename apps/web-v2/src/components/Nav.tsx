@@ -62,9 +62,9 @@ export default function Nav() {
             {LINKS.map((l) => (
               <NavLink key={l.href} l={l} />
             ))}
-            <Link className="cta-sm" to="/#diagnostico">
-              Diagnóstico gratis <span aria-hidden="true">→</span>
-            </Link>
+            <a className="cta-sm" href="/agendar/">
+              Agendar reunión <span aria-hidden="true">→</span>
+            </a>
           </div>
 
           <button
@@ -85,9 +85,9 @@ export default function Nav() {
           <NavLink key={l.href} l={l} onClick={() => setOpen(false)} />
         ))}
         <a href="/contacto/" onClick={() => setOpen(false)}>Contacto</a>
-        <Link className="btn-cta" to="/#diagnostico" onClick={() => setOpen(false)}>
-          Diagnóstico gratis <span aria-hidden="true">→</span>
-        </Link>
+        <a className="btn-cta" href="/agendar/" onClick={() => setOpen(false)}>
+          Agendar reunión <span aria-hidden="true">→</span>
+        </a>
       </aside>
     </>
   );

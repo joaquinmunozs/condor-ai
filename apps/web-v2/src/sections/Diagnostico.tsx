@@ -1,18 +1,18 @@
 const PASOS = [
   {
     n: "01",
-    titulo: "Responde 6 preguntas",
-    desc: "Sobre tu negocio y tus objetivos. Dos minutos, sin tecnicismos.",
+    titulo: "Eliges día y hora",
+    desc: "De lunes a sábado, de 9:00 a 21:00 (hora Chile). En un par de clics.",
   },
   {
     n: "02",
-    titulo: "La IA analiza tu caso",
-    desc: "Cruza tus respuestas y detecta dónde estás perdiendo clientes y tiempo.",
+    titulo: "Conversamos de tu negocio",
+    desc: "30 minutos por videollamada. Revisamos tu caso, sin tecnicismos ni presión.",
   },
   {
     n: "03",
-    titulo: "Recibes tu plan de despegue",
-    desc: "Un diagnóstico claro con los próximos pasos concretos para crecer.",
+    titulo: "Te damos un plan claro",
+    desc: "Próximos pasos concretos para crecer con IA: webs, videos y automatización.",
   },
 ];
 
@@ -23,12 +23,12 @@ export default function Diagnostico() {
         <div className="glass glass-block">
         <p className="mono-label eyebrow reveal">Cómo funciona</p>
         <h2 className="reveal">
-          Descubre qué te está <span className="grad-tx">dejando atrás</span>.
+          Conversemos y <span className="grad-tx">hagamos despegar</span> tu negocio.
         </h2>
         <p className="diag-lead reveal">
-          No es un formulario más: una IA hace la radiografía de tu negocio y te
-          muestra exactamente dónde tu competencia te está sacando ventaja — y cómo
-          recuperarla. Gratis y en 2 minutos.
+          Agenda una reunión gratis con nuestro equipo. Revisamos tu caso y te
+          mostramos exactamente cómo la IA puede hacerte crecer — sin compromiso
+          y sin tecnicismos.
         </p>
 
         <ol className="pasos">
@@ -44,11 +44,10 @@ export default function Diagnostico() {
         </ol>
 
         <div className="diag-cta reveal">
-          {/* TODO integrar al quiz real: /diagnostico-gratis/ */}
-          <a className="btn-cta lg" href="/diagnostico-gratis/">
-            Empezar mi diagnóstico gratis <span aria-hidden="true">→</span>
+          <a className="btn-cta lg" href="/agendar/">
+            Agendar mi reunión gratis <span aria-hidden="true">→</span>
           </a>
-          <p className="diag-note mono-label">Sin tarjeta · sin compromiso · 2 min</p>
+          <p className="diag-note mono-label">Lun a sáb · 9-21h Chile · sin compromiso</p>
         </div>
         </div>
       </div>
