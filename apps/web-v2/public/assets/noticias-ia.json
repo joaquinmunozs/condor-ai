@@ -1,9 +1,17 @@
 {
+  "fecha": "2026-06-27",
   "noticias": [
-    { "titular": "La IA ya está vendiendo por los negocios pequeños: esto cambió esta semana" },
-    { "titular": "Webs en 3D y videos 4K hechos con IA: el nuevo estándar para destacar" },
-    { "titular": "Agentes de IA que atienden a tus clientes 24/7: por qué tu competencia ya los usa" }
-  ],
-  "fecha": "2026-06-18",
-  "url": "/noticias-ia/"
+    {
+      "titular": "OpenAI lanza Jalapeño: su primer chip de IA diseñado a medida",
+      "url": "/noticias-ia/openai-presenta-jalapeno-el-primer-chip-de-inferen/"
+    },
+    {
+      "titular": "Google Gemini 2.5 Pro rediseña la batalla por modelos de ciencia",
+      "url": "/noticias-ia/google-lanza-gemini-2-5-pro-con-deep-think-records/"
+    },
+    {
+      "titular": "Alibaba acusada de ataque masivo para extraer secretos de Claude",
+      "url": "/noticias-ia/antropic-acusa-a-alibaba-millones-de-consultas-fra/"
+    }
+  ]
 }
