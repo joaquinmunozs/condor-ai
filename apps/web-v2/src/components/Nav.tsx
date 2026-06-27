@@ -9,9 +9,9 @@ import { Link } from "react-router-dom";
  */
 type NavItem = { label: string; href: string; type: "hash" | "route" | "ext" };
 const LINKS: NavItem[] = [
-  { label: "Servicios", href: "#servicios", type: "hash" },
-  { label: "Portafolio", href: "#portafolio", type: "hash" },
-  { label: "Blog", href: "#blog", type: "hash" },
+  { label: "Servicios", href: "/servicios/", type: "ext" },
+  { label: "Portafolio", href: "/portafolio/", type: "ext" },
+  { label: "Blog", href: "/blog/", type: "ext" },
   { label: "Nosotros", href: "/nosotros/", type: "ext" },
   { label: "Planes", href: "/planes", type: "route" },
   { label: "Acceso clientes", href: "/portal.html", type: "ext" },

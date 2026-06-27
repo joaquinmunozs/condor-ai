@@ -4,18 +4,21 @@ const SERVICIOS = [
     alt: "+1200m",
     titulo: "Páginas web profesionales",
     desc: "Un sitio veloz y claro que convierte visitas en clientes: agenda, vende y atiende por WhatsApp 24/7. Tu negocio se ve serio y trabaja incluso mientras duermes.",
+    href: "/paginas-web/",
   },
   {
     n: "02",
     alt: "+2400m",
     titulo: "Videos con IA profesionales",
     desc: "Videos 4K de tus productos y anuncios con presentadores realistas, sin grabar ni contratar producción. Más alcance y más ventas a una fracción del costo y el tiempo.",
+    href: "/videos-ia/",
   },
   {
     n: "03",
     alt: "+3600m",
     titulo: "Automatizaciones y Agentes IA",
     desc: "Empleados digitales que responden, hacen seguimiento y crean contenido solos. Eliminas tareas repetitivas y dejas de perder clientes por no contestar a tiempo.",
+    href: "/automatizacion/",
   },
 ];
 
@@ -31,10 +34,11 @@ export default function Servicios() {
         </div>
         <div className="serv-grid">
           {SERVICIOS.map((s, i) => (
-            <article
+            <a
               className="serv-card glass reveal"
               key={s.titulo}
-              style={{ transitionDelay: `${i * 0.07}s` }}
+              href={s.href}
+              style={{ transitionDelay: `${i * 0.07}s`, textDecoration: "none" }}
             >
               <div className="serv-top">
                 <span className="serv-step">{s.n}</span>
@@ -42,7 +46,8 @@ export default function Servicios() {
               </div>
               <h3>{s.titulo}</h3>
               <p>{s.desc}</p>
-            </article>
+              <span className="serv-go">Ver más →</span>
+            </a>
           ))}
         </div>
       </div>
