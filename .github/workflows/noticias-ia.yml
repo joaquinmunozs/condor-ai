@@ -30,5 +30,6 @@ jobs:
           if git diff --staged --quiet; then
             echo "Sin cambios esta semana"
           else
-            for n in 1 2 3; do git pull --rebase origin main && git commit -m "chore: noticias IA semanal ($(date +%Y-%m-%d))" && git push && break || sleep 5; done
+            git commit -m "chore: noticias IA semanal ($(date +%Y-%m-%d))"
+            for n in 1 2 3; do git pull --rebase origin main && git push && break || sleep 5; done
           fi
