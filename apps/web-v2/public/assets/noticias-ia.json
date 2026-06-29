@@ -1,17 +1,13 @@
 {
-  "fecha": "2026-06-27",
+  "fecha": "2026-06-29",
   "noticias": [
     {
-      "titular": "OpenAI lanza Jalapeño: su primer chip de IA diseñado a medida",
-      "url": "/noticias-ia/openai-presenta-jalapeno-el-primer-chip-de-inferen/"
+      "titular": " Lo s agentes autó nom os de IA ya funcio nan si n se rvi do r es ce ntra les: la revol ución lleg ó a tu negoci o",
+      "url": "/noticias-ia/clau-de-fabl-e-5-los-agente-s-ia-que-tra-bajan-dia/"
     },
     {
-      "titular": "Google Gemini 2.5 Pro rediseña la batalla por modelos de ciencia",
-      "url": "/noticias-ia/google-lanza-gemini-2-5-pro-con-deep-think-records/"
-    },
-    {
-      "titular": "Alibaba acusada de ataque masivo para extraer secretos de Claude",
-      "url": "/noticias-ia/antropic-acusa-a-alibaba-millones-de-consultas-fra/"
+      "titular": "OpenAI frena su lanzamiento: GPT-5.6 solo para empresas aprobadas por gobierno",
+      "url": "/noticias-ia/el-nuevo-modelo-gpt-5-6-sol-terra-y-luna-ya-es-rea/"
     }
   ]
 }
