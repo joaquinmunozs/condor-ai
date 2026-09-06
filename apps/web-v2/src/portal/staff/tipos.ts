@@ -150,6 +150,21 @@ export type DatosCuentaInterna = {
   url?: string;
 };
 
+/** Un contenedor operativo: reúne accesos que se usan juntos. */
+export type ModuloCuenta = {
+  id: string;
+  nombre: string;
+  descripcion: string | null;
+  cliente_id: string | null;
+  color: "azul" | "violeta" | "verde" | "naranjo" | "gris";
+  orden: number;
+  creado_en: string;
+  actualizado_en: string;
+};
+
+/** Un correo presente aquí puede entrar al portal como staff. */
+export type MiembroEquipo = { email: string; nombre: string | null };
+
 export type ArchivoInterno = {
   url: string;
   nombre: string;
@@ -165,6 +180,7 @@ export type NotaInterna = {
   categoria: string;
   tipo: "nota" | "cuenta" | "archivo";
   cliente_id: string | null;
+  modulo_cuenta_id?: string | null;
   datos_cuenta: DatosCuentaInterna | null;
   archivo_url: string | null;
   archivo_nombre: string | null;
